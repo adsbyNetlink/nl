@@ -246,7 +246,7 @@ function calculateScrollToViewRatio() {
 
 //Multi_adx
 var MultiRatioAdxNetlink = function (adUnit, _divElement, _intTop) {
-    const scrollRatio = calculateScrollToViewRatio();
+  const scrollRatio = calculateScrollToViewRatio();
   console.log("Scroll to view ratio:", scrollRatio);
   var gpt_script = document.createElement("script");
   gpt_script.async = true;
@@ -265,36 +265,28 @@ var MultiRatioAdxNetlink = function (adUnit, _divElement, _intTop) {
 
   document.addEventListener("DOMContentLoaded", () => {
     if (window.screen.width <= 768) {
-      var ads_config = [
-        {
-          ad_unit: adUnit[0],
-          size: [
-            [300, 600],
-            [300, 250],
-          ],
-          id: random_id(),
-        },
-        {
-          ad_unit: adUnit[1],
-          size: [
-            [300, 600],
-            [300, 250],
-          ],
-          id: random_id(),
-        },
-      ];
-
-      window.googletag = window.googletag || { cmd: [] };
-      googletag.cmd.push(function () {
-        for (var i = 0; i < ads_config.length; i++) {
-          var c = ads_config[i];
-          googletag
-            .defineSlot(c.ad_unit, c.size, c.id)
-            .addService(googletag.pubads());
-        }
-        googletag.pubads().enableSingleRequest();
-        googletag.enableServices();
-      });
+      var ads_config = [];
+      for (var i = 0; i < scrollRatio / 2; i++) {
+        addAds(adUnit);
+      }
+      function addAds(_adU) {
+        const size = [
+          [300, 600],
+          [300, 250],
+        ]; // Kích thước quảng cáo
+        const id = random_id(); // ID ngẫu nhiên cho ads unit
+        window.googletag = window.googletag || { cmd: [] };
+        googletag.cmd.push(function () {
+          googletag.defineSlot(_adU, size, id).addService(googletag.pubads());
+          googletag.pubads().enableSingleRequest();
+          googletag.enableServices();
+        });
+        ads_config.push({
+          ad_unit: _adU,
+          size: size,
+          id: id,
+        });
+      }
 
       var ac = 0;
       var sp = (ap = 0);
@@ -308,8 +300,8 @@ var MultiRatioAdxNetlink = function (adUnit, _divElement, _intTop) {
         }
 
         ap = links[i].offsetTop;
-
-        if (sp + screen.height < ap) {
+        // if (sp + screen.height < ap) {
+        if (screen.height < ap) {
           function insertAfter(referenceNode, newNode) {
             referenceNode.parentNode.insertBefore(newNode, referenceNode);
           }
@@ -371,7 +363,126 @@ var MultiRatioAdxNetlink = function (adUnit, _divElement, _intTop) {
             div.style.transform = "";
           } else if (ap < 0 && Math.abs(ap) + ch < h) {
             div.style.position = "fixed";
-            div.style.top = "0";
+            div.style.top = _intTop != null ? _intTop + "px" : "0";
+            div.style.bottom = "";
+            div.style.left = "50%";
+            div.style.transform = "translateX(-50%)";
+          } else if (Math.abs(ap) + ch >= h) {
+            div.style.position = "absolute";
+            div.style.top = "";
+            div.style.bottom = "0";
+            div.style.left = "50%";
+            div.style.transform = "translateX(-50%)";
+          }
+        } else {
+          div.style.position = "";
+          div.style.top = "";
+          div.style.bottom = "";
+          div.style.left = "";
+          div.style.transform = "";
+        }
+      }
+    });
+  }
+
+  var ar = [];
+  function random_id() {
+    var r = Math.random().toString().substring(2);
+    while (1) {
+      if (!ar.includes(r)) {
+        break;
+      }
+      r = Math.random().toString().substring(2);
+    }
+    ar.push(r);
+
+    return "div-netlink-ia-" + r + "-0";
+  }
+};
+var MultiFixedAdxNetlink = function (adUnit, _divElement, _intTop) {
+  var gpt_script = document.createElement("script");
+  gpt_script.async = true;
+  gpt_script.src = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
+  document.getElementsByTagName("head")[0].appendChild(gpt_script);
+
+  var netlink_style = document.createElement("style");
+  netlink_style.type = "text/css";
+  netlink_style.innerHTML =
+    ".netlink-in-articles { margin-top:10px;margin-bottom:10px;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw); }" +
+    ".ia-content { position: relative;min-height: 600px; }" +
+    ".in-articles { text-align: center; }" +
+    '.netlink-in-articles::before { content: "Ads By Netlink";display: inline-block;width: 100%;height: 20px;font-size: 14px;text-align: center;color: #9e9e9e;background-color: #f1f1f1; }' +
+    '.netlink-in-articles::after { content: "Scroll to Continue";display: inline-block;width: 100%;height: 20px;font-size: 14px;text-align: center;color: #9e9e9e;background-color: #f1f1f1; }';
+  document.getElementsByTagName("head")[0].appendChild(netlink_style);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    if (window.screen.width <= 768) {
+      const size = [
+        [300, 600],
+        [300, 250],
+      ]; // Kích thước quảng cáo
+      const id = random_id(); // ID ngẫu nhiên cho ads unit
+      window.googletag = window.googletag || { cmd: [] };
+      googletag.cmd.push(function () {
+        googletag.defineSlot(adUnit, size, id).addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+      var links = document.getElementById(_divElement);
+      // console.log(links);
+
+      function insertAfter(referenceNode, newNode) {
+        referenceNode.parentNode.insertBefore(newNode, referenceNode);
+      }
+      var el = document.createElement("div");
+      el.setAttribute("class", "netlink-in-articles");
+      insertAfter(links, el);
+
+      var html =
+        '<div class="ia-content">' +
+        '<div class="in-articles">' +
+        '<div id="' +
+        id +
+        '"></div>' +
+        "</div>" +
+        "</div>";
+
+      el.innerHTML = html;
+      googletag.cmd.push(function () {
+        googletag.display(id);
+      });
+      in_articles();
+    }
+
+    if (document.getElementsByClassName("netlink-in-articles").length > 0) {
+    }
+  });
+
+  function in_articles() {
+    document.addEventListener("scroll", function (e) {
+      var s = document.documentElement.scrollTop;
+      for (
+        var i = 0;
+        i < document.getElementsByClassName("netlink-in-articles").length;
+        i++
+      ) {
+        var e = document.getElementsByClassName("netlink-in-articles")[i];
+
+        var div = e.querySelector(".in-articles");
+        var h = e.querySelector(".ia-content").clientHeight;
+        var ch = e.querySelector(".in-articles").clientHeight;
+
+        var ap = e.querySelector(".ia-content").getBoundingClientRect().top;
+        if (ch < h) {
+          if (ap >= 0) {
+            div.style.position = "";
+            div.style.top = "";
+            div.style.bottom = "";
+            div.style.left = "";
+            div.style.transform = "";
+          } else if (ap < 0 && Math.abs(ap) + ch < h) {
+            div.style.position = "fixed";
+            div.style.top = _intTop != null ? _intTop + "px" : "0";
             div.style.bottom = "";
             div.style.left = "50%";
             div.style.transform = "translateX(-50%)";
@@ -409,11 +520,13 @@ var MultiRatioAdxNetlink = function (adUnit, _divElement, _intTop) {
 };
 
 //in_image_adx
-var InImageAdsNetlink = function (adUnit, _divElement, intImage, _isMbtop) {
+var InImageAdsNetlink = function (adUnit, _intImage) {
   var _head = window.top.document.querySelector("head");
   var _body = window.top.document.querySelector("body");
-  var mainContentDetail = _body.querySelector(_divElement);
-  var images = mainContentDetail.querySelectorAll("img");
+  var mainContentDetail = _body.querySelectorAll("img");
+  console.log(_body.querySelectorAll("img"));
+  images = _body.querySelectorAll("img");
+  var intImage = _intImage - 1;
 
   var containerPar = document.createElement("div");
   containerPar.style.position = "relative";
@@ -431,30 +544,24 @@ var InImageAdsNetlink = function (adUnit, _divElement, intImage, _isMbtop) {
     images[intImage].width + "px",
     "important"
   );
-  containerNL.style.setProperty("height", "50px", "important");
+  // containerNL.style.setProperty("height", "50px", "important");
 
   var scriptTag = document.createElement("script");
   scriptTag.src = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
   scriptTag.async = true;
 
   var scriptTag2 = document.createElement("script");
-  scriptTag2.innerHTML = `window.googletag = window.googletag || {cmd: []};googletag.cmd.push(function() {googletag.defineSlot('${adUnit}', [300, 50], 'div-gpt-ad-1711076508079-0').addService(googletag.pubads());googletag.pubads().enableSingleRequest();googletag.enableServices();});`;
+  scriptTag2.innerHTML = `window.googletag = window.googletag || {cmd: []};googletag.cmd.push(function() {googletag.defineSlot('${adUnit}', [[300, 50], [300, 100]], 'div-gpt-ad-1711076508079-0').addService(googletag.pubads());googletag.pubads().enableSingleRequest();googletag.enableServices();});`;
 
   _head.appendChild(scriptTag);
   _head.appendChild(scriptTag2);
+  var divElementAds = document.createElement("div");
 
   var divElement = document.createElement("div");
   divElement.id = "div-gpt-ad-1711076508079-0";
-  // divElement.style.minWidth = "300px";
-  //divElement.style.minHeight = "100px";
-  //divElement.style.maxWidth = "300px";
-  //divElement.style.maxHeight = "50px";
-  divElement.style.setProperty("maxHeight", "50px", "important");
-  divElement.style.setProperty("maxWidth", "300px", "important");
   divElement.style.setProperty("width", "300px", "important");
-  //divElement.style.maxHeight = "50px";
-  //divElement.style.maxHeight = "50px";
 
+  divElementAds.appendChild(divElement);
   var scriptElement2 = document.createElement("script");
   scriptElement2.innerHTML =
     "googletag.cmd.push(function() {googletag.display('div-gpt-ad-1711076508079-0');});";
@@ -476,7 +583,7 @@ var InImageAdsNetlink = function (adUnit, _divElement, intImage, _isMbtop) {
   btnCloseNL.style.padding = "2px";
   btnCloseNL.style.borderRadius = "20px";
 
-  containerNL.appendChild(divElement);
+  containerNL.appendChild(divElementAds);
 
   containerNL.appendChild(btnCloseNL);
 
