@@ -555,7 +555,7 @@ var InImageAdsNetlink = function (adUnit, _intImage) {
 
   _head.appendChild(scriptTag);
   _head.appendChild(scriptTag2);
-  var divElementAds = document.createElement("div");
+  var divElementAds = document.createElement("center");
 
   var divElement = document.createElement("div");
   divElement.id = "div-gpt-ad-1711076508079-0";
@@ -631,3 +631,184 @@ function setIntervalWithTimeout(callback, interval, timeout) {
   }, timeout);
   return { intervalId: timer, timeoutId: timeoutId };
 }
+
+//===========================================================================
+//adsense
+
+const adSense_client =
+  "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3166493188367342";
+
+//firstview_adSemse
+var FirstViewAdSenseNetlink = function (_adSlot) {
+  var body = window.top.document.querySelector("body");
+  var _head = window.top.document.querySelector("head");
+  // Tạo phần tử div chứa hình ảnh
+  var mobileFVAdxElement = document.createElement("div");
+  mobileFVAdxElement.style.setProperty("width", "100%", "important");
+  mobileFVAdxElement.style.setProperty("position", "fixed", "important");
+  mobileFVAdxElement.style.setProperty("top", "0", "important");
+  mobileFVAdxElement.style.setProperty("left", "0", "important");
+  mobileFVAdxElement.style.zIndex = "10000000000";
+  mobileFVAdxElement.style.textAlign = "center";
+  mobileFVAdxElement.style.opacity = 1;
+  mobileFVAdxElement.style.height = "100vh";
+  mobileFVAdxElement.style.setProperty("min-height", "300px", "important");
+  mobileFVAdxElement.style.backgroundColor = "#ffffffb3";
+  mobileFVAdxElement.style.visibility = "hidden";
+
+  var scriptTag = document.createElement("script");
+  scriptTag.src = adSense_client;
+  scriptTag.async = true;
+  scriptTag.crossOrigin = "anonymous";
+  _head.appendChild(scriptTag);
+
+  var scriptTag2 = document.createElement("script");
+  scriptTag2.innerHTML = `(adsbygoogle = window.adsbygoogle || []).push({});`;
+
+  var divElement = document.createElement("ins");
+  divElement.className = "adsbygoogle";
+  divElement.style.display = "inline-block";
+  divElement.style.width = "300px";
+  divElement.style.height = "600px";
+  divElement.setAttribute("data-ad-client", "ca-pub-3166493188367342");
+  divElement.setAttribute("data-ad-slot", _adSlot);
+  divElement.style.position = "absolute";
+  divElement.style.left = "50%";
+  divElement.style.top = "50%";
+  divElement.style.transform = "translate(-50%, -50%)";
+
+  // Tạo nút xóa
+
+  var btnCloseNLFVAdx = document.createElement("div");
+  btnCloseNLFVAdx.style.position = "absolute";
+  btnCloseNLFVAdx.style.setProperty("display", "none", "important");
+  btnCloseNLFVAdx.style.zIndex = 99;
+  btnCloseNLFVAdx.style.setProperty("width", "60px", "important");
+  btnCloseNLFVAdx.style.setProperty("height", "25px", "important");
+  btnCloseNLFVAdx.style.setProperty("right", "0px", "important");
+  btnCloseNLFVAdx.style.setProperty("top", "5%", "important");
+  btnCloseNLFVAdx.style.cursor = "pointer";
+
+  btnCloseNLFVAdx.style.background = "#b7b7b7b5";
+  btnCloseNLFVAdx.style.padding = "2px";
+  btnCloseNLFVAdx.style.borderRadius = "20px 0px 0px 20px";
+
+  var spanCloseNLFVAdx = document.createElement("span");
+  spanCloseNLFVAdx.innerHTML = "close";
+  spanCloseNLFVAdx.style.position = "absolute";
+  spanCloseNLFVAdx.style.fontSize = "15px";
+  spanCloseNLFVAdx.style.top = "50%";
+  spanCloseNLFVAdx.style.left = "50%";
+  spanCloseNLFVAdx.style.transform = "translate(-50%, -50%)";
+
+  btnCloseNLFVAdx.appendChild(spanCloseNLFVAdx);
+
+  mobileFVAdxElement.appendChild(btnCloseNLFVAdx);
+  mobileFVAdxElement.appendChild(divElement);
+  mobileFVAdxElement.appendChild(scriptTag2);
+
+  body.appendChild(mobileFVAdxElement);
+  if (window.innerWidth <= 768) {
+    mobileFVAdxElement.style.setProperty("display", "block", "important");
+  } else {
+    mobileFVAdxElement.style.setProperty("display", "none", "important");
+  }
+
+  window.addEventListener("scroll", function () {
+    mobileFVAdxElement.style.height = "100vh";
+  });
+  btnCloseNLFVAdx.addEventListener("click", function () {
+    mobileFVAdxElement.remove();
+  });
+
+  var adCheck = setIntervalWithTimeout(
+    function () {
+      if (divElement.getAttribute("data-ad-status") == "filled") {
+        var iframeAdx = divElement.querySelector("iframe");
+        if (iframeAdx) {
+          if (iframeAdx.getAttribute("data-load-complete") == "true") {
+            // containerNL.style.backgroundColor = "white";
+            mobileFVAdxElement.style.visibility = "visible";
+            btnCloseNLFVAdx.style.display = "block";
+            clearInterval(adCheck.intervalId);
+          }
+        }
+      }
+    },
+    1000,
+    10000
+  );
+  function setIntervalWithTimeout(callback, interval, timeout) {
+    var timer = setInterval(function () {
+      callback();
+    }, interval);
+    var timeoutId = setTimeout(function () {
+      clearInterval(timer);
+    }, timeout);
+    return { intervalId: timer, timeoutId: timeoutId };
+  }
+};
+
+//inpage_adsense
+var InPageAdSenseNetlink = function (_adSlot, _divElement, _divChilElement) {
+  var _head = window.top.document.querySelector("head");
+  $(document).ready(function () {
+    $(document).ready(function () {
+      $(window).on("scroll", function () {
+        if (document.getElementById("content-ad") != null) {
+          var top = $("#content-ad").offset().top - $(window).scrollTop() - 70;
+          var bot = top > 0 ? 600 : 600 + top;
+          if ($(window).width() < 768) {
+            document
+              .getElementById("content-ad")
+              .style.setProperty("min-height", "600px", "important");
+            $("#ad").css({
+              display: `block`,
+              clip: `rect(` + top + `px, 300px, ` + bot + `px, 0px)`,
+              left: ($(window).width() - 300) / 2 + `px`,
+            });
+          }
+        }
+      });
+    });
+
+    var count = 0;
+    var links = $(_divElement).find(_divChilElement);
+    if (links.length <= 4) midpoint = 1;
+    else midpoint = Math.floor(links.length / 2);
+    for (var i = 0; i < links.length; i++) {
+      console.log(midpoint);
+      count++;
+      if (count == midpoint) {
+        var ele = links[i];
+        function insertAfter(referenceNode, newNode) {
+          referenceNode.parentNode.insertBefore(
+            newNode,
+            referenceNode.nextSibling
+          );
+        }
+        var el = document.createElement("div");
+        el.setAttribute("id", "netlink");
+        var div = links[i];
+        insertAfter(div, el);
+      }
+    }
+    var scriptTag = document.createElement("script");
+    scriptTag.src = adSense_client;
+    scriptTag.async = true;
+    scriptTag.crossOrigin = "anonymous";
+    _head.appendChild(scriptTag);
+    var html = `<div id="content-ad" style="overflow: hidden; position: relative; z-index: 2; width: 100%; height: auto">`;
+    html += `<div id="ad" style="position: fixed;z-index: 10000;top: 70px;display:none;">`;
+    html += `<ins class="adsbygoogle"
+    style="display:inline-block;min-width:300px;min-height:600px;"
+    data-ad-client="ca-pub-3166493188367342"
+    data-ad-slot="${_adSlot}"></ins>
+    <script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>`;
+    html += `</div>`;
+    html += `</div>`;
+    $("#netlink").append(html);
+  });
+};
