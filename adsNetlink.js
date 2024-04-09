@@ -133,8 +133,10 @@ var InPageAdxNetlink = function (adUnit, _divElement, _divChilElement) {
     $(document).ready(function () {
       $(window).on("scroll", function () {
         if (document.getElementById("content-ad") != null) {
+          var added_val = 50;
+          var added_px = '50px';
           var top = $("#content-ad").offset().top - $(window).scrollTop() - 70;
-          var bot = top > 0 ? 600 : 600 + top;
+          var bot = top > 0 ? 600 : 600 + top - added_val;
           if ($(window).width() < 768) {
             document
               .getElementById("content-ad")
@@ -183,7 +185,7 @@ var InPageAdxNetlink = function (adUnit, _divElement, _divChilElement) {
     _head.appendChild(scriptTag);
     _head.appendChild(scriptTag2);
     var html = `<div id="content-ad" style="overflow: hidden; position: relative; z-index: 2; width: 100%;">`;
-    html += `<div id="ad" style="position: fixed;z-index: 10000;top: 70px;display:none;">`;
+    html += `<div id="ad" style="position: fixed;z-index: 10000;top: 70px+${added_px};display:none;">`;
     html += `<div id='div-gpt-ad-1712027483252-0' style='min-width: 300px; min-height: 600px;'>
       <script>
         googletag.cmd.push(function() { googletag.display('div-gpt-ad-1712027483252-0'); });
