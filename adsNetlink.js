@@ -152,14 +152,16 @@ var InPageAdxNetlink = function (adUnit, _divElement, _divChilElement) {
     });
 
     var count = 0;
+    var _body = window.top.document.querySelector("body");
+      var links = _body.querySelector("#" + _divElement);
     var links = $(_divElement).find(_divChilElement);
-    console.log(links);
+    //console.log(links);
     if (links.length <= 4) midpoint = 1;
     else midpoint = Math.floor(links.length / 2);
     for (var i = 0; i < links.length; i++) {
-      console.log(midpoint);
+      //console.log(midpoint);
       count++;
-      console.log(midpoint);
+      //console.log(midpoint);
       if (count == midpoint) {
         var ele = links[i];
 
