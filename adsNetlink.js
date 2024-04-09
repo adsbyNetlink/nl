@@ -548,6 +548,7 @@ var InImageAdsNetlink = function (adUnit, _intImage) {
     images[intImage].width + "px",
     "important"
   );
+  containerNL.style.setProperty("max-height", "100px", "important");
   // containerNL.style.setProperty("height", "50px", "important");
 
   var scriptTag = document.createElement("script");
