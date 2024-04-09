@@ -129,12 +129,12 @@ var RewardAdxNetlink = function (adunit) {
 //inpage_adx
 var InPageAdxNetlink = function (adUnit, _divElement, _divChilElement) {
   var _head = window.top.document.querySelector("head");
+  var added_val = 50;
+  var added_px = '50px';
   $(document).ready(function () {
     $(document).ready(function () {
       $(window).on("scroll", function () {
         if (document.getElementById("content-ad") != null) {
-          var added_val = 50;
-          var added_px = '50px';
           var top = $("#content-ad").offset().top - $(window).scrollTop() - 70;
           var bot = top > 0 ? 600 : 600 + top - added_val;
           if ($(window).width() < 768) {
