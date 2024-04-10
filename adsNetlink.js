@@ -129,14 +129,12 @@ var RewardAdxNetlink = function (adunit) {
 //inpage_adx
 var InPageAdxNetlink = function (adUnit, _divElement, _divChilElement) {
   var _head = window.top.document.querySelector("head");
-  var added_val = 50;
-  var added_px = '50px';
   $(document).ready(function () {
     $(document).ready(function () {
       $(window).on("scroll", function () {
         if (document.getElementById("content-ad") != null) {
           var top = $("#content-ad").offset().top - $(window).scrollTop() - 70;
-          var bot = top > 0 ? 600 : 600 + top - added_val;
+          var bot = top > 0 ? 600 : 600 + top;
           if ($(window).width() < 768) {
             document
               .getElementById("content-ad")
@@ -152,16 +150,14 @@ var InPageAdxNetlink = function (adUnit, _divElement, _divChilElement) {
     });
 
     var count = 0;
-    var _body = window.top.document.querySelector("body");
-      var links = _body.querySelector("#" + _divElement);
     var links = $(_divElement).find(_divChilElement);
-    //console.log(links);
+    console.log(links);
     if (links.length <= 4) midpoint = 1;
     else midpoint = Math.floor(links.length / 2);
     for (var i = 0; i < links.length; i++) {
-      //console.log(midpoint);
+      console.log(midpoint);
       count++;
-      //console.log(midpoint);
+      console.log(midpoint);
       if (count == midpoint) {
         var ele = links[i];
 
@@ -187,7 +183,7 @@ var InPageAdxNetlink = function (adUnit, _divElement, _divChilElement) {
     _head.appendChild(scriptTag);
     _head.appendChild(scriptTag2);
     var html = `<div id="content-ad" style="overflow: hidden; position: relative; z-index: 2; width: 100%;">`;
-    html += `<div id="ad" style="position: fixed;z-index: 10000;top: 70px+${added_px};display:none;">`;
+    html += `<div id="ad" style="position: fixed;z-index: 10000;top: 70px;display:none;">`;
     html += `<div id='div-gpt-ad-1712027483252-0' style='min-width: 300px; min-height: 600px;'>
       <script>
         googletag.cmd.push(function() { googletag.display('div-gpt-ad-1712027483252-0'); });
@@ -371,7 +367,7 @@ var MultiRatioAdxNetlink = function (adUnit, _divElement, _intTop) {
             div.style.bottom = "";
             div.style.left = "50%";
             div.style.transform = "translateX(-50%)";
-          } else if (Math.abs(ap) + ch >= h) {
+          } else if (Math.abs(ap) + ch >= h - _intTop) {
             div.style.position = "absolute";
             div.style.top = "";
             div.style.bottom = "0";
@@ -404,6 +400,7 @@ var MultiRatioAdxNetlink = function (adUnit, _divElement, _intTop) {
   }
 };
 var MultiFixedAdxNetlink = function (adUnit, _divElement, _intTop) {
+  var _body = window.top.document.querySelector("body");
   var gpt_script = document.createElement("script");
   gpt_script.async = true;
   gpt_script.src = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
@@ -432,7 +429,8 @@ var MultiFixedAdxNetlink = function (adUnit, _divElement, _intTop) {
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
       });
-      var links = document.getElementById(_divElement);
+      var _body = window.top.document.querySelector("body");
+      var links = _body.querySelector("#" + _divElement);
       // console.log(links);
 
       function insertAfter(referenceNode, newNode) {
