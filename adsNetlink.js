@@ -1,3 +1,29 @@
+function NetlinkAdx(adunit, size, _element) {
+  const element = document.body.querySelector(_element);
+  if(element == null) {
+    console.log("Ads: " + adunit + ". Element not found!");
+    return;
+  }
+
+  checkGPTExists();
+
+  const gpt_id = randomID();
+
+  window.googletag = window.googletag || {cmd: []};
+  googletag.cmd.push(function() {
+    googletag.defineSlot(adUnit, size, gpt_id).addService(googletag.pubads());
+    googletag.pubads().enableSingleRequest();
+    googletag.enableServices();
+  });
+
+  const html = `<div id='${gpt_id}' style='min-width: ${size[0]}px; min-height: ${size[1]}px;'></div>`;
+  element.insertAdjacentHTML("beforeend", html);
+
+  googletag.cmd.push(() => {
+    googletag.display(gpt_id);
+  });
+}
+
 function NetlinkAdxRewarded(adunit) {
   checkGPTExists();
 
@@ -334,6 +360,8 @@ function NetlinkAdxMultipleSize(adUnit, _element, mtop=0) {
 };
 
 
+
+
 function calculateScrollToViewRatio() {
   const windowHeight = window.innerHeight; // Chiều cao của cửa sổ trình duyệt
   const documentHeight = Math.max(
@@ -497,10 +525,10 @@ function setIntervalWithTimeout(callback, interval, timeout) {
 }
 
 //===========================================================================
-//adsense
+//ADSENSE
+//===========================================================================
 
-const adSense_client =
-  "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3166493188367342";
+const adSense_client = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3166493188367342";
 
 //firstview_adSemse
 var FirstViewAdSenseNetlink = function (_adSlot) {
@@ -678,21 +706,22 @@ var InPageAdSenseNetlink = function (_adSlot, _divElement, _divChilElement) {
 };
 
 
-///
+
+//===========================================================================//
+//===========================================================================//
+//===========================================================================//
 function checkGPTExists() {
-  const scripts = document.querySelectorAll("head script");
-  for (var i = 0; i < scripts.length; i++) {
-    if (scripts[i].src === "https://securepubads.g.doubleclick.net/tag/js/gpt.js") {
-      return true;
-    }
+  const scripts = document.head.querySelectorAll('script[src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"]');
+  if (scripts.length > 0) {
+    return true;
+  } else {
+    const gpt_script = document.createElement("script");
+    gpt_script.src = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
+    gpt_script.async = true;
+    document.head.appendChild(gpt_script);
+
+    return false;
   }
-
-  const gpt_script = document.createElement("script");
-  gpt_script.src = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
-  gpt_script.async = true;
-  document.head.appendChild(gpt_script);
-
-  return false;
 }
 
 let ar = [];
