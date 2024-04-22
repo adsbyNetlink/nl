@@ -61,7 +61,7 @@ function NetlinkAdx(_adUnit, _adSize, _mapping = [], _element, _insertPosition=0
 }
 
 //_insertPosition = 0: beforeend, position = 1: afterbegin, position = 2: beforebegin, position = 3: afterend
-function NetlinkAdxAutoAds(_adUnit, _start, _end, _adSize, _mapping = [], _elements, _insertPosition=2, _set_min, _minScreen = 1) {
+function NetlinkAdxAutoAds(_adUnit, _start, _end, _adSize, _mapping = [], _elements, _insertPosition=2, _set_min=0, _minScreen = 1) {
   var elements = document.querySelectorAll(_elements);
   if(elements.length == 0) return;
 
