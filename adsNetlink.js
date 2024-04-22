@@ -60,6 +60,23 @@ function NetlinkAdx(_adUnit, _adSize, _mapping = [], _element, _insertPosition=0
   });
 }
 
+function NetlinkAdxInterstitial(_adUnit) {
+  checkGPTExists();
+
+  window.googletag = window.googletag || {cmd: []};
+  var interstitialSlot;
+  googletag.cmd.push(function() {
+    interstitialSlot = googletag.defineOutOfPageSlot(_adUnit, googletag.enums.OutOfPageFormat.INTERSTITIAL);
+    if (interstitialSlot) {
+      interstitialSlot.addService(googletag.pubads());
+    }
+
+    googletag.pubads().enableSingleRequest();
+    googletag.enableServices();
+    googletag.display(interstitialSlot);
+  });
+}
+
 //_insertPosition = 0: beforeend, position = 1: afterbegin, position = 2: beforebegin, position = 3: afterend
 function NetlinkAdxAutoAds(_adUnit, _start, _end, _adSize, _mapping = [], _elements, _insertPosition=2, _set_min=0, _minScreen = 1) {
   var elements = document.querySelectorAll(_elements);
@@ -182,7 +199,7 @@ function NetlinkAdxInImage(_adUnit, _adSize, _mapping = [], _element, _image = 1
       inImage_Close.style.display = "block";
       clearInterval(interval);
     }
-    if(++timeout > 600) 
+    if(++timeout > 30) 
       clearInterval(interval);
   }, 1000);
 
