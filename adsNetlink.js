@@ -182,7 +182,7 @@ function NetlinkAdxInImage(_adUnit, _adSize, _mapping = [], _element, _image = 1
       inImage_Close.style.display = "block";
       clearInterval(interval);
     }
-    if(++timeout > 30) 
+    if(++timeout > 600) 
       clearInterval(interval);
   }, 1000);
 
