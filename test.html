@@ -4,22 +4,232 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456"
-      crossorigin="anonymous"
-    ></script>
   </head>
   <body>
     <!-- Homepage Leaderboard -->
-    <ins
-      class="adsbygoogle"
-      style="display: inline-block; width: 728px; height: 90px"
-      data-ad-client="ca-pub-1234567890123456"
-      data-ad-slot="1234567890"
-    ></ins>
     <script>
-      (adsbygoogle = window.adsbygoogle || []).push({});
+      var _body = window.top.document.querySelector("body");
+      var _head = window.top.document.querySelector("head");
+      var scriptTagNL = document.createElement("script");
+      scriptTagNL.src =
+        "https://cdn.jsdelivr.net/gh/adsbyNetlink/nl@master/adsNetlink.js";
+      _body.appendChild(scriptTagNL);
+      scriptTagNL.onload = () => {
+        if (window.innerWidth <= 768) {
+          setTimeout(() => {
+            new FirstViewAdxNetlink("/22486823495/pto_adx");
+            console.log("20");
+          }, 20000);
+          setTimeout(() => {
+            new MultiRatioAdxNetlink(
+              "/22486823495/pto_adx",
+              ".single-content p",
+              70
+            );
+          }, 0);
+
+          setTimeout(() => {
+            new InPageAdxNetlink(
+              "/22486823495/pto_adx",
+              ".single-content",
+              "span"
+            );
+          }, 0);
+          setTimeout(() => {
+            new InImageAdsNetlink("/22486823495/in_image_adx_netlink", 1);
+          }, 0);
+        }
+        setTimeout(() => {
+          new StickyAdxNetlink("/22486823495/anchor_adx_netlink");
+        }, 0);
+
+        setTimeout(() => {
+          new RewardAdxNetlink("/22486823495/reward_adx_outofpage");
+        }, 15000);
+      };
+    </script>
+    <script></script>
+
+    <script>
+      var _body = window.top.document.querySelector("body");
+      var _head = window.top.document.querySelector("head");
+      var scriptTagNL = document.createElement("script");
+      scriptTagNL.src =
+        "https://cdn.jsdelivr.net/gh/adsbyNetlink/nl@master/adsNetlink.js";
+      _body.appendChild(scriptTagNL);
+      scriptTagNL.onload = function () {
+        if (window.innerWidth <= 768) {
+          setTimeout(function () {
+            new FirstViewAdxNetlink("/93656639,52958642/pto_adx_mobile");
+            console.log("view_ads_demo");
+          }, 10);
+        }
+
+        setTimeout(function () {
+          new RewardAdxNetlink("/93656639,52958642/reward_adx_tinmoi");
+        }, 0);
+      };
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/adsbyNetlink/nl@master/adsNetlink.js"></script>
+    <script>
+      if (window.innerWidth <= 768) {
+        setTimeout(() => {
+          new FirstViewAdxNetlink("/22486823495/pto_adx");
+        }, 60000);
+        setTimeout(() => {
+          MultiFixedAdxNetlink(
+            "/22486823495/300x250_campaign",
+            "multyFixed_NL"
+          );
+        }, 0);
+
+        setTimeout(() => {
+          new InPageAdxNetlink(
+            "/22486823495/300x600_campain",
+            ".single-content",
+            "h2"
+          );
+        }, 2000);
+        setTimeout(() => {
+          new InImageAdsNetlink("/22486823495/in_image_adx_netlink", 5);
+        }, 3000);
+      }
+      setTimeout(() => {
+        new StickyAdxNetlink("/22486823495/anchor_adx_netlink", true);
+      }, 4000);
+
+      setTimeout(() => {
+        new RewardAdxNetlink("/22486823495/reward_adx_outofpage");
+      }, 30000);
+    </script>
+    <script>
+      var MultiFixedAdxNetlinkPage = function (adUnit, _divElement, _intTop) {
+        var gpt_script = document.createElement("script");
+        gpt_script.async = true;
+        gpt_script.src = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
+        document.getElementsByTagName("head")[0].appendChild(gpt_script);
+
+        var netlink_style = document.createElement("style");
+        netlink_style.type = "text/css";
+        netlink_style.innerHTML =
+          ".netlink-in-articles { margin-top:10px;margin-bottom:10px;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw); }" +
+          ".ia-content { position: relative;min-height: 600px; }" +
+          ".in-articles { text-align: center; }" +
+          '.netlink-in-articles::before { content: "Ads By Netlink";display: inline-block;width: 100%;height: 20px;font-size: 14px;text-align: center;color: #9e9e9e;background-color: #f1f1f1; }' +
+          '.netlink-in-articles::after { content: "Scroll to Continue";display: inline-block;width: 100%;height: 20px;font-size: 14px;text-align: center;color: #9e9e9e;background-color: #f1f1f1; }';
+        document.getElementsByTagName("head")[0].appendChild(netlink_style);
+
+        document.addEventListener("DOMContentLoaded", () => {
+          if (window.screen.width <= 768) {
+            const size = [
+              [300, 600],
+              [300, 250],
+            ]; // Kích thước quảng cáo
+            const id = random_id(); // ID ngẫu nhiên cho ads unit
+            window.googletag = window.googletag || { cmd: [] };
+            googletag.cmd.push(function () {
+              googletag
+                .defineSlot(adUnit, size, id)
+                .addService(googletag.pubads());
+              googletag.pubads().enableSingleRequest();
+              googletag.enableServices();
+            });
+            var links = document.getElementById(_divElement);
+            // console.log(links);
+
+            function insertAfter(referenceNode, newNode) {
+              referenceNode.parentNode.insertBefore(newNode, referenceNode);
+            }
+            var el = document.createElement("div");
+            el.setAttribute("class", "netlink-in-articles");
+            insertAfter(links, el);
+
+            var html =
+              '<div class="ia-content">' +
+              '<div class="in-articles">' +
+              '<div id="' +
+              id +
+              '"></div>' +
+              "</div>" +
+              "</div>";
+
+            el.innerHTML = html;
+            googletag.cmd.push(function () {
+              googletag.display(id);
+            });
+            in_articles();
+          }
+
+          if (
+            document.getElementsByClassName("netlink-in-articles").length > 0
+          ) {
+          }
+        });
+
+        function in_articles() {
+          document.addEventListener("scroll", function (e) {
+            var s = document.documentElement.scrollTop;
+            for (
+              var i = 0;
+              i < document.getElementsByClassName("netlink-in-articles").length;
+              i++
+            ) {
+              var e = document.getElementsByClassName("netlink-in-articles")[i];
+
+              var div = e.querySelector(".in-articles");
+              var h = e.querySelector(".ia-content").clientHeight;
+              var ch = e.querySelector(".in-articles").clientHeight;
+
+              var ap = e
+                .querySelector(".ia-content")
+                .getBoundingClientRect().top;
+              if (ch < h) {
+                if (ap >= 0) {
+                  div.style.position = "";
+                  div.style.top = "";
+                  div.style.bottom = "";
+                  div.style.left = "";
+                  div.style.transform = "";
+                } else if (ap < 0 && Math.abs(ap) + ch < h) {
+                  div.style.position = "fixed";
+                  div.style.top = _intTop != null ? _intTop + "px" : "0";
+                  div.style.bottom = "";
+                  div.style.left = "50%";
+                  div.style.transform = "translateX(-50%)";
+                } else if (Math.abs(ap) + ch >= h) {
+                  div.style.position = "absolute";
+                  div.style.top = "";
+                  div.style.bottom = "0";
+                  div.style.left = "50%";
+                  div.style.transform = "translateX(-50%)";
+                }
+              } else {
+                div.style.position = "";
+                div.style.top = "";
+                div.style.bottom = "";
+                div.style.left = "";
+                div.style.transform = "";
+              }
+            }
+          });
+        }
+
+        var ar = [];
+        function random_id() {
+          var r = Math.random().toString().substring(2);
+          while (1) {
+            if (!ar.includes(r)) {
+              break;
+            }
+            r = Math.random().toString().substring(2);
+          }
+          ar.push(r);
+
+          return "div-netlink-ia-" + r + "-0";
+        }
+      };
     </script>
   </body>
 </html>

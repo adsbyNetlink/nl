@@ -367,7 +367,7 @@ var MultiRatioAdxNetlink = function (adUnit, _divElement, _intTop) {
             div.style.bottom = "";
             div.style.left = "50%";
             div.style.transform = "translateX(-50%)";
-          } else if (Math.abs(ap) + ch >= h) {
+          } else if (Math.abs(ap) + ch >= h - _intTop) {
             div.style.position = "absolute";
             div.style.top = "";
             div.style.bottom = "0";
@@ -400,6 +400,7 @@ var MultiRatioAdxNetlink = function (adUnit, _divElement, _intTop) {
   }
 };
 var MultiFixedAdxNetlink = function (adUnit, _divElement, _intTop) {
+  var _body = window.top.document.querySelector("body");
   var gpt_script = document.createElement("script");
   gpt_script.async = true;
   gpt_script.src = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
@@ -428,7 +429,8 @@ var MultiFixedAdxNetlink = function (adUnit, _divElement, _intTop) {
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
       });
-      var links = document.getElementById(_divElement);
+      var _body = window.top.document.querySelector("body");
+      var links = _body.querySelector("#" + _divElement);
       // console.log(links);
 
       function insertAfter(referenceNode, newNode) {
@@ -544,6 +546,7 @@ var InImageAdsNetlink = function (adUnit, _intImage) {
     images[intImage].width + "px",
     "important"
   );
+  containerNL.style.setProperty("max-height", "100px", "important");
   // containerNL.style.setProperty("height", "50px", "important");
 
   var scriptTag = document.createElement("script");
