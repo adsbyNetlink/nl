@@ -425,7 +425,7 @@ function NetlinkAdxFirstView(_adUnit, _adSize = [300, 600]) {
       <div class="netlink-firstview-close" style="display: none; position: absolute; width: 60px !important; height: 25px !important; top: 5% !important; right: 0px !important; cursor: pointer; background: rgba(183, 183, 183, 0.71); padding: 2px; border-radius: 20px 0px 0px 20px;" z-index: 99;>
         <span style="position: absolute; font-size: 15px; top: 50%; left: 50%; transform: translate(-50%, -50%);">close</span>
       </div>
-      <div id="${gpt_id}" style="position: absolute; top: 50%; transform: translate(-50%, -50%); left: 0px;"></div>
+      <div id="${gpt_id}" style="position: absolute; top: 50%; transform: translate(-50%, -50%); left: 50%;"></div>
     </div>`;
   document.body.insertAdjacentHTML("beforeend", html);
 
@@ -601,7 +601,7 @@ function NetlinkAdsenseFirstView(_adClient, _adSlot, _adSize = [300, 600]) {
         <span style="position: absolute; font-size: 15px; top: 50%; left: 50%; transform: translate(-50%, -50%);">close</span>
       </div>
       <ins class="adsbygoogle"
-        style="display:inline-block;width:${ad_width}px;height:${ad_height}px;position: absolute; top: 50%; left: 0px; transform: translate(-50%, -50%);"
+        style="display:inline-block;width:${ad_width}px;height:${ad_height}px;position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"
         data-ad-client=${_adClient}
         data-ad-slot=${_adSlot}>
      </ins>
