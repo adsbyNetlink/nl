@@ -443,8 +443,8 @@ function NetlinkAdxFirstView(_adUnit, _adSize = [300, 600]) {
     if (ads && ads.getAttribute("data-load-complete") == "true") {
       clearInterval(interval);
 
-      document.body.querySelector('netlink-firstview').style.visibility = "visible";
-      document.body.querySelector('netlink-firstview-close').style.display = "block";
+      document.body.querySelector('.netlink-firstview').style.visibility = "visible";
+      document.body.querySelector('.netlink-firstview-close').style.display = "block";
     }
 
     if(++timer > 600) {
