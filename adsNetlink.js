@@ -2,7 +2,7 @@
 //ADX
 //===========================================================================
 
-//_insertPosition = 0: beforeend, position = 1: afterbegin, position = 2: beforebegin, position = 3: afterend
+//_insertPosition = 0: beforeend, _insertPosition = 1: afterbegin, _insertPosition = 2: beforebegin, _insertPosition = 3: afterend
 function NetlinkAdx(_adUnit, _adSize, _mapping = [], _element, _insertPosition=0, _set_min=0) {
   var element = document.body.querySelector(_element);
   if(element == null) return;
@@ -81,7 +81,7 @@ function NetlinkAdxInterstitial(_adUnit) {
   });
 }
 
-//_insertPosition = 0: beforeend, position = 1: afterbegin, position = 2: beforebegin, position = 3: afterend
+//_insertPosition = 0: beforeend, _insertPosition = 1: afterbegin, _insertPosition = 2: beforebegin, _insertPosition = 3: afterend
 function NetlinkAdxAutoAds(_adUnit, _start, _end, _adSize, _mapping = [], _elements, _insertPosition=2, _set_min=0, _minScreen=1, _position_start=0, _position_end=0) {
   var elements = document.querySelectorAll(_elements);
   if(elements.length == 0) return;
@@ -90,6 +90,7 @@ function NetlinkAdxAutoAds(_adUnit, _start, _end, _adSize, _mapping = [], _eleme
   var _element_str = lastSpaceIndex === -1 ? _elements : _elements.slice(0, lastSpaceIndex).trim() + ' > ' + _elements.slice(lastSpaceIndex + 1).trim();
 
   var min_ad = 0;
+  var position = 1;
   for (var i = 0; i < elements.length; i++) {
     if(_start > _end) break;
 
@@ -97,11 +98,11 @@ function NetlinkAdxAutoAds(_adUnit, _start, _end, _adSize, _mapping = [], _eleme
 
     if(_insertPosition == 0 || _insertPosition == 3) {
       if(i == 0 || elements[i].offsetTop + elements[i].clientHeight - min_ad - (screen.height * _minScreen) >= 0) {
-        if(_position_start == 0 || _position_start <= i+1)  {
+        if(_position_start == 0 || _position_start <= position++)  {
           var adUnit = _adUnit + (_start++);
           NetlinkAdx(adUnit, _adSize, _mapping, _element, _insertPosition, _set_min);
 
-          if(_position_end != 0 && _position_end > _start) break;
+          if(_position_end != 0 && _position_end < position) break;
         }
 
         if(i < elements.length - 1)
@@ -109,11 +110,11 @@ function NetlinkAdxAutoAds(_adUnit, _start, _end, _adSize, _mapping = [], _eleme
       }
     } else if(_insertPosition == 1 || _insertPosition == 2) {
       if(i == 0 || elements[i].offsetTop - min_ad - (screen.height * _minScreen) >= 0) {
-        if(_position_start == 0 || _position_start <= i+1)  {
+        if(_position_start == 0 || _position_start <= position++)  {
           var adUnit = _adUnit + (_start++);
           NetlinkAdx(adUnit, _adSize, _mapping, _element, _insertPosition, _set_min);
 
-          if(_position_end != 0 && _position_end > _start) break;
+          if(_position_end != 0 && _position_end < position) break;
         }
         
         min_ad = elements[i].offsetTop;
@@ -294,7 +295,7 @@ function NetlinkAdxMultipleSize(_adUnit, _element, _insertPosition=0, _marginTop
   MultipleSizeScroll(_marginTop);
 }
 
-//_insertPosition = 0: beforeend, position = 1: afterbegin, position = 2: beforebegin, position = 3: afterend
+//_insertPosition = 0: beforeend, _insertPosition = 1: afterbegin, _insertPosition = 2: beforebegin, _insertPosition = 3: afterend
 function NetlinkAdxMultipleSizes(_adUnit, _start, _end, _elements, _insertPosition=2, _marginTop=0, _minScreen = 1, _position_start=0, _position_end=0) {
   if (window.innerWidth >= 768) return;
 
@@ -305,6 +306,7 @@ function NetlinkAdxMultipleSizes(_adUnit, _start, _end, _elements, _insertPositi
   var _element_str = lastSpaceIndex === -1 ? _elements : _elements.slice(0, lastSpaceIndex).trim() + ' > ' + _elements.slice(lastSpaceIndex + 1).trim();
 
   var min_ad = 0;
+  var position = 1;
   for (var i = 0; i < elements.length; i++) {
     if(_start > _end) break;
 
@@ -312,11 +314,11 @@ function NetlinkAdxMultipleSizes(_adUnit, _start, _end, _elements, _insertPositi
 
     if(_insertPosition == 0 || _insertPosition == 3) {
       if(i == 0 || elements[i].offsetTop + elements[i].clientHeight - min_ad - (screen.height * _minScreen) >= 0) {
-        if(_position_start == 0 || _position_start <= i+1)  {
+        if(_position_start == 0 || _position_start <= position++)  {
           var adUnit = _adUnit + (_start++);
           MultipleSizeAdd(adUnit, _element, _insertPosition);
 
-          if(_position_end != 0 && _position_end > _start) break;
+          if(_position_end != 0 && _position_end < position) break;
         }
 
         if(i < elements.length - 1)
@@ -324,11 +326,11 @@ function NetlinkAdxMultipleSizes(_adUnit, _start, _end, _elements, _insertPositi
       }
     } else if(_insertPosition == 1 || _insertPosition == 2) {
       if(i == 0 || elements[i].offsetTop - min_ad - (screen.height * _minScreen) >= 0) {
-        if(_position_start == 0 || _position_start <= i+1)  {
+        if(_position_start == 0 || _position_start <= position++)  {
           var adUnit = _adUnit + (_start++);
           MultipleSizeAdd(adUnit, _element, _insertPosition);
 
-          if(_position_end != 0 && _position_end > _start) break;
+          if(_position_end != 0 && _position_end < position) break;
         }
 
         min_ad = elements[i].offsetTop;
