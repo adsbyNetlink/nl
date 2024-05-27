@@ -251,8 +251,9 @@ function NetlinkAdxInPage(_adUnit, _element, _marginTop = -1) {
     googletag.enableServices();
   });
 
-  var midpoint = Math.min(Math.floor(document.querySelectorAll(_element).length / 2), 4);
-  document.querySelectorAll(_element)[midpoint - 1].insertAdjacentHTML("afterend", "<div id='netlink-inpage-ad'></div>");
+ var parent = document.querySelectorAll(_element)[0];
+  var midpoint = Math.min(Math.floor(parent.childElementCount / 2), 4);
+  parent.children[midpoint - 1].insertAdjacentHTML("afterend", "<div id='netlink-inpage-ad'></div>");
 
   var html = `<div id="inpage-content-ad" style="overflow: hidden; position: relative; z-index: 2; width: 100%;">
     <div id="inpage-ad" style="display:none;">
