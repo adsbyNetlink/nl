@@ -66,7 +66,6 @@ function NetlinkAdx(_adUnit, _adSize, _mapping = [], _element, _insertPosition=0
 
 function NetlinkAdxInterstitial(_adUnit) {
   checkGPTExists();
-
   window.googletag = window.googletag || {cmd: []};
   var interstitialSlot;
   googletag.cmd.push(function() {
