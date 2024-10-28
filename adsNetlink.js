@@ -617,8 +617,8 @@ function NetlinkAdsenseFirstView(_adClient, _adSlot, _adSize = [300, 600]) {
   var ad_height = _adSize[1];
 
   var html = `<div class="netlink-firstview" style="display: block; position: fixed; width: 100%; height: 100vh; top: 0px; left: 0px; text-align: center; opacity: 1; background-color: rgba(255, 255, 255, 0.7); visibility: hidden; z-index: 2147483647;">
-      <div class="netlink-firstview-close" style="display: none; position: absolute; width: 60px !important; height: 25px !important; top: 5% !important; right: 0px !important; cursor: pointer; background: rgba(183, 183, 183, 0.71); padding: 2px; border-radius: 20px 0px 0px 20px;" z-index: 99;>
-        <span style="position: absolute; font-size: 15px; top: 50%; left: 50%; transform: translate(-50%, -50%);">close</span>
+      <div class="netlink-firstview-close" style="display: none; position: absolute; width: 160px !important; height: 25px !important; top: 5% !important; right: 0px !important; cursor: pointer; background: rgba(183, 183, 183, 0.71); padding: 2px; border-radius: 20px 0px 0px 20px;" z-index: 99;>
+        <span style="position: absolute; font-size: 18px; top: 50%; left: 50%; transform: translate(-50%, -50%);">Tắt quảng cáo</span>
       </div>
       <ins class="adsbygoogle"
         style="display:inline-block;width:${ad_width}px;height:${ad_height}px;position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"
