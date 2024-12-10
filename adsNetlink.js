@@ -473,6 +473,55 @@ function NetlinkAdxFirstView(_adUnit, _adSize = [300, 600]) {
   }, 1000);
 }
 
+function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _pageViewLimit = 0) {
+  if (_isDisplay === 1 && window.innerWidth < 768) return;
+  if (_isDisplay === 2 && window.innerWidth >= 768) return;
+  let pageViewCount = localStorage.getItem('pageViewCount') || 0;
+  if (_pageViewLimit > 0 && pageViewCount < _pageViewLimit) return;
+  localStorage.setItem('pageViewCount', ++pageViewCount);
+
+  checkGPTExists();
+
+  var gpt_id = randomID();
+
+  window.googletag = window.googletag || {cmd: []};
+  googletag.cmd.push(function() {
+    googletag.defineSlot(_adUnit, _adSize, gpt_id).addService(googletag.pubads());
+    googletag.pubads().enableSingleRequest();
+    googletag.enableServices();
+  });
+
+  var html = `<div class="netlink-firstview" style="display: block; position: fixed; width: 100%; height: 100vh; top: 0px; left: 0px; text-align: center; opacity: 1; background-color: rgba(255, 255, 255, 0.7); visibility: hidden; z-index: 2147483647;">
+      <div class="netlink-firstview-close" style="display: none; position: absolute; width: 160px !important; height: 25px !important; top: 80px !important; right: 0px !important; cursor: pointer; background: rgba(183, 183, 183, 0.71); padding: 2px; border-radius: 20px 0px 0px 20px; z-index: 9999;">
+        <span style="position: absolute; font-size: 15px; top: 50%; left: 50%; transform: translate(-50%, -50%);">close</span>
+      </div>
+      <div id="${gpt_id}" style="position: absolute; top: 50%; transform: translate(-50%, -50%); left: 50%;"></div>
+    </div>`;
+  document.body.insertAdjacentHTML("beforeend", html);
+
+  googletag.cmd.push(function() {
+    googletag.display(gpt_id);
+  });
+
+  document.body.querySelector('.netlink-firstview-close').addEventListener("click", function () {
+    document.body.querySelector('.netlink-firstview').style.display = "none";
+  });
+
+  var timer = 0;
+  var interval = setInterval(() => {
+    var ads = document.getElementById(gpt_id).querySelector("iframe");
+    if (ads && ads.getAttribute("data-load-complete") == "true") {
+      clearInterval(interval);
+      document.body.querySelector('.netlink-firstview').style.visibility = "visible";
+      document.body.querySelector('.netlink-firstview-close').style.display = "block";
+    }
+
+    if(++timer > 600) {
+      clearInterval(interval);
+    }
+  }, 1000);
+}
+
 function NetlinkAdxRewarded(_adUnit) {
   checkGPTExists();
 
