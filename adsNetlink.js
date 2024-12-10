@@ -624,6 +624,65 @@ function NetlinkAdxRewardedExt(_adUnit, _isDisplay = 0, _pageView = [0]) {
     } 
   });
 }
+
+function NetlinkAdxCatfish(_adUnit, _adSize = [320, 100], _isDisplay = 0, _pageView = [0], _bottom = 0) {
+  if (_isDisplay === 1 && window.innerWidth < 768) return;
+  if (_isDisplay === 2 && window.innerWidth >= 768) return;
+
+  let pageViewCount = localStorage.getItem('pageViewCount') || 0;
+  
+  if (!Array.isArray(_pageView)) {
+    _pageView = [0];
+  }
+  if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
+  localStorage.setItem('pageViewCount', ++pageViewCount);
+
+  checkGPTExists();
+  var gpt_id = randomID();
+  var html = `
+    <div id="catfish-ad" class="catfish-hidden" style="position: fixed; bottom: -120px; left: 0; width: 100%; height: 100px; background-color: white; z-index: 1000; box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2); transition: bottom 1.1s ease-in-out; display: flex; justify-content: center; align-items: center; bottom: ${_bottom}px;">
+        <button id="close-catfish" style="position: absolute; top: 0px; right: 0px; background: #D6DCD9; border: none; color: #BBC4BF; font-size: 18px; cursor: pointer; width: 20px; height: 20px;">×</button>
+        <div id="div-gpt-ad" style="min-width: ${_adSize[0]}px; min-height: ${_adSize[1]}px;"></div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML("beforeend", html);
+  
+  window.googletag = window.googletag || {cmd: []};
+  googletag.cmd.push(function() {
+    googletag.defineSlot(_adUnit, _adSize, gpt_id).addService(googletag.pubads());
+    googletag.pubads().enableSingleRequest();
+    googletag.enableServices();
+  });
+
+  googletag.cmd.push(function() {
+    googletag.display(gpt_id);
+  });
+  var triggerPosition = window.innerHeight * 1.5;
+  var isVisible = false;
+  window.addEventListener("scroll", function () {
+    var ads = document.getElementById(gpt_id).querySelector("iframe");
+    var catfishAd = document.getElementById('catfish-ad');
+
+    if (window.scrollY > triggerPosition && !isVisible && ads && ads.getAttribute("data-load-complete") == "true") {
+      catfishAd.style.display = 'flex';
+      isVisible = true;
+    } else if (window.scrollY <= triggerPosition && isVisible) {
+      catfishAd.style.display = 'none';
+      isVisible = false;
+    }
+  });
+
+  document.getElementById('close-catfish').addEventListener("click", function () {
+    document.getElementById('catfish-ad').style.display = "none";
+  });
+  var style = document.createElement('style');
+  style.innerHTML = `
+    .catfish-hidden {
+      display: none;
+    }
+  `;
+  document.head.appendChild(style);
+}
 //===========================================================================
 //ADSENSE
 //===========================================================================
