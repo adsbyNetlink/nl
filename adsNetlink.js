@@ -479,7 +479,6 @@ function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _
   const now = new Date();
   if(pageViewCount == 0)
   {
-    
     localStorage.setItem('expiry', now.getTime());
   }
   else
