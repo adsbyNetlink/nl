@@ -477,7 +477,8 @@ function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _
   if (_isDisplay === 1 && window.innerWidth < 768) return;
   if (_isDisplay === 2 && window.innerWidth >= 768) return;
   let pageViewCount = localStorage.getItem('pageViewCount') || 0;
-
+  console.error('Độ phân giải:' + window.innerWidth);
+  console.error('Chế độ hiển thị:' + _isDisplay);
   if (!Array.isArray(_pageView)) {
     _pageView = [0];
   }
