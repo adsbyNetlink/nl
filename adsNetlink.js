@@ -583,7 +583,19 @@ function NetlinkAdxRewardedExt(_adUnit, _isDisplay = 0, _pageView = [0]) {
   if (_isDisplay === 2 && window.innerWidth >= 768) return;
 
   let pageViewCount = localStorage.getItem('pageViewCount') || 0;
-  
+  const now = new Date();
+  if(pageViewCount == 0)
+  {
+    localStorage.setItem('expiry', now.getTime());
+  }
+  else
+  {
+    if(now.getTime() - Number(localStorage.getItem('expiry')) > 180000)
+    {
+      pageViewCount = 0;
+      localStorage.setItem('expiry', now.getTime());
+    }
+  }
   if (!Array.isArray(_pageView)) {
     _pageView = [0];
   }
@@ -636,7 +648,19 @@ function NetlinkAdxCatfish(_adUnit, _adSize = [320, 100], _isDisplay = 0, _pageV
   if (_isDisplay === 2 && window.innerWidth >= 768) return;
 
   let pageViewCount = localStorage.getItem('pageViewCount') || 0;
-  
+  const now = new Date();
+  if(pageViewCount == 0)
+  {
+    localStorage.setItem('expiry', now.getTime());
+  }
+  else
+  {
+    if(now.getTime() - Number(localStorage.getItem('expiry')) > 180000)
+    {
+      pageViewCount = 0;
+      localStorage.setItem('expiry', now.getTime());
+    }
+  }
   if (!Array.isArray(_pageView)) {
     _pageView = [0];
   }
