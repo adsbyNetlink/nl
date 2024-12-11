@@ -474,8 +474,18 @@ function NetlinkAdxFirstView(_adUnit, _adSize = [300, 600]) {
 }
 
 function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _pageView = [0]) {
-  if (_isDisplay === 1 && window.innerWidth < 768) return;
-  if (_isDisplay === 2 && window.innerWidth >= 768) return;
+  if (_isDisplay === 1 && window.innerWidth < 768) 
+  {
+    console.log('Cái này không đúng 768.');
+    return;
+  }
+  if (_isDisplay === 2 && window.innerWidth >= 768)
+  {
+    console.log('Cái này đúng 768.');
+    return;
+  }
+
+  console.log('Code chạy rồi mà.');
   let pageViewCount = localStorage.getItem('pageViewCount') || 0;
 
   if (!Array.isArray(_pageView)) {
