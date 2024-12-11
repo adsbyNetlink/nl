@@ -1,7 +1,7 @@
 //===========================================================================
 //ADX
 //===========================================================================
-window.NetlinkAdxFirstViewExt = NetlinkAdxFirstViewExt;
+
 //_insertPosition = 0: beforeend, _insertPosition = 1: afterbegin, _insertPosition = 2: beforebegin, _insertPosition = 3: afterend
 function NetlinkAdx(_adUnit, _adSize, _mapping = [], _element, _insertPosition=0, _set_min=0) {
   var element = document.body.querySelector(_element);
@@ -472,7 +472,7 @@ function NetlinkAdxFirstView(_adUnit, _adSize = [300, 600]) {
     }
   }, 1000);
 }
-
+window.NetlinkAdxFirstViewExt = NetlinkAdxFirstViewExt;
 function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _pageView = [0]) {
   if (_isDisplay === 1 && window.innerWidth < 768) return;
   if (_isDisplay === 2 && window.innerWidth >= 768) return;
