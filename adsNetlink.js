@@ -494,11 +494,8 @@ function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _
   }
   localStorage.setItem('pageViewCount', ++pageViewCount);
   if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
-
   checkGPTExists();
-
   var gpt_id = randomID();
-
   window.googletag = window.googletag || {cmd: []};
   googletag.cmd.push(function() {
     googletag.defineSlot(_adUnit, _adSize, gpt_id).addService(googletag.pubads());
