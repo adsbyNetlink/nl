@@ -472,19 +472,15 @@ function NetlinkAdxFirstView(_adUnit, _adSize = [300, 600]) {
     }
   }, 1000);
 }
-window.NetlinkAdxFirstViewExt = NetlinkAdxFirstViewExt;
 function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _pageView = [0]) {
   if (_isDisplay === 1 && window.innerWidth < 768) return;
   if (_isDisplay === 2 && window.innerWidth >= 768) return;
   let pageViewCount = localStorage.getItem('pageViewCount') || 0;
-  console.error('Độ phân giải:' + window.innerWidth);
-  console.error('Chế độ hiển thị:' + _isDisplay);
   if (!Array.isArray(_pageView)) {
     _pageView = [0];
   }
-  if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
-  
   localStorage.setItem('pageViewCount', ++pageViewCount);
+  if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
 
   checkGPTExists();
 
@@ -581,9 +577,8 @@ function NetlinkAdxRewardedExt(_adUnit, _isDisplay = 0, _pageView = [0]) {
   if (!Array.isArray(_pageView)) {
     _pageView = [0];
   }
-  if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
-  
   localStorage.setItem('pageViewCount', ++pageViewCount);
+  if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
   checkGPTExists();
 
   window.googletag = window.googletag || { cmd: [] }; 
@@ -635,9 +630,8 @@ function NetlinkAdxCatfish(_adUnit, _adSize = [320, 100], _isDisplay = 0, _pageV
   if (!Array.isArray(_pageView)) {
     _pageView = [0];
   }
-  if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
   localStorage.setItem('pageViewCount', ++pageViewCount);
-
+  if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
   checkGPTExists();
   var gpt_id = randomID();
   var html = `
