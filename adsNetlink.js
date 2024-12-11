@@ -476,6 +476,20 @@ function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _
   if (_isDisplay === 1 && window.innerWidth < 768) return;
   if (_isDisplay === 2 && window.innerWidth >= 768) return;
   let pageViewCount = localStorage.getItem('pageViewCount') || 0;
+  const now = new Date();
+  if(pageViewCount == 0)
+  {
+    
+    localStorage.setItem('expiry', now.getTime());
+  }
+  else
+  {
+    if(now.getTime() - Number(localStorage.getItem('expiry')) > 180000)
+    {
+      pageViewCount = 0;
+      localStorage.setItem('expiry', now.getTime());
+    }
+  }
   if (!Array.isArray(_pageView)) {
     _pageView = [0];
   }
@@ -494,8 +508,8 @@ function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _
   });
 
   var html = `<div class="netlink-firstview" style="display: block; position: fixed; width: 100%; height: 100vh; top: 0px; left: 0px; text-align: center; opacity: 1; background-color: rgba(255, 255, 255, 0.7); visibility: hidden; z-index: 2147483647;">
-      <div class="netlink-firstview-close" style="display: none; position: absolute; width: 160px !important; height: 25px !important; top: 80px !important; right: 0px !important; cursor: pointer; background: rgba(183, 183, 183, 0.71); padding: 2px; border-radius: 20px 0px 0px 20px; z-index: 9999;">
-        <span style="position: absolute; font-size: 15px; top: 50%; left: 50%; transform: translate(-50%, -50%);">close</span>
+      <div class="netlink-firstview-close" style="display: none; position: absolute; width: 85px !important; height: 25px !important; top: 80px !important; right: 0px !important; cursor: pointer; background: rgba(0, 112, 186,1); padding: 2px; border-radius: 20px 0px 0px 20px; z-index: 9999;">
+        <span style="position: absolute; font-size: 15px; top: 50%; left: 50%; transform: translate(-50%, -50%); color:white">CLOSE</span>
       </div>
       <div id="${gpt_id}" style="position: absolute; top: 50%; transform: translate(-50%, -50%); left: 50%;"></div>
     </div>`;
