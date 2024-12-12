@@ -493,7 +493,8 @@ function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _
     _pageView = [0];
   }
   localStorage.setItem('pageViewCount', ++pageViewCount);
-  if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
+  if (_pageView.length == 1 && _pageView.includes(0)) {}
+  else if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
   checkGPTExists();
   var gpt_id = randomID();
   window.googletag = window.googletag || {cmd: []};
@@ -600,7 +601,8 @@ function NetlinkAdxRewardedExt(_adUnit, _isDisplay = 0, _pageView = [0]) {
     _pageView = [0];
   }
   localStorage.setItem('pageViewCount', ++pageViewCount);
-  if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
+  if (_pageView.length == 1 && _pageView.includes(0)) {}
+  else if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
   checkGPTExists();
 
   window.googletag = window.googletag || { cmd: [] }; 
@@ -665,7 +667,8 @@ function NetlinkAdxCatfish(_adUnit, _adSize = [320, 100], _isDisplay = 0, _pageV
     _pageView = [0];
   }
   localStorage.setItem('pageViewCount', ++pageViewCount);
-  if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
+  if (_pageView.length == 1 && _pageView.includes(0)) {}
+  else if (_pageView.length > 0 && !_pageView.includes(pageViewCount)) return;
   checkGPTExists();
   var gpt_id = randomID();
   var html = `
