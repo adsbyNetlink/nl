@@ -508,7 +508,7 @@ function NetlinkAdxFirstViewExt(_adUnit, _adSize = [300, 600], _isDisplay = 0, _
       <div class="netlink-firstview-close" style="display: none; position: absolute; width: 85px !important; height: 25px !important; top: 80px !important; right: 0px !important; cursor: pointer; background: rgba(0, 112, 186,1); padding: 2px; border-radius: 20px 0px 0px 20px; z-index: 9999;">
         <span style="position: absolute; font-size: 15px; top: 50%; left: 50%; transform: translate(-50%, -50%); color:white">CLOSE</span>
       </div>
-      <div id="${gpt_id}" style="position: absolute; top: 50%; transform: translate(-50%, -50%); left: 50%;"></div>
+      <div id="${gpt_id}" style="position: absolute; top: 50%; transform: translate(-50%, -50%); left: 50%; width: 300px;"></div>
     </div>`;
   document.body.insertAdjacentHTML("beforeend", html);
 
