@@ -229,18 +229,17 @@ function NetlinkAdxWipe(_adUnit, _delay = 3000, _closeBtnPos = 1) {
 }
 
 /**
- * NetlinkAdxBalloon: Quảng cáo nổi góc dưới bên phải, hỗ trợ Responsive PC/Mobile
- * _adUnit: Mã đơn vị quảng cáo
- * _adSize: Mảng kích thước (Ví dụ: [[728, 90], [300, 100], [300, 50]])
- * _closeBtnPos: Vị trí nút đóng (0: trái, 1: phải, 2: giữa)
+ * NetlinkAdxBalloon: Quảng cáo nổi góc dưới bên phải
+ * @param {string} _adUnit - Mã đơn vị quảng cáo
+ * @param {array} _adSize - Mảng kích thước mặc định mới
+ * @param {number} _closeBtnPos - Vị trí nút đóng (0: trái, 1: phải, 2: giữa)
  */
-function NetlinkAdxBalloon(_adUnit, _adSize = [[728, 90], [300, 100], [300, 50]], _closeBtnPos = 1) {
+function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300], [300, 400]], _closeBtnPos = 1) {
   checkGPTExists();
   var gpt_id = randomID();
   var containerId = 'nl-balloon-container-' + gpt_id;
 
   // 1. Tạo Container cố định góc phải màn hình
-  // display: none để ẩn đi cho đến khi ad load xong (tránh khung trắng)
   var html = `
     <div id="${containerId}" style="position: fixed; bottom: 10px; right: 10px; z-index: 2147483646; display: none; transition: all 0.3s;">
         <div id="wrapper-${gpt_id}" style="position: relative; background: #ffffff; box-shadow: 0 0 15px rgba(0,0,0,0.2); padding: 2px; border-radius: 4px;">
@@ -252,20 +251,14 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[728, 90], [300, 100], [300, 50]]
 
   window.googletag = window.googletag || { cmd: [] };
   googletag.cmd.push(function() {
-    // 2. Thiết lập Size Mapping linh hoạt theo yêu cầu của anh
-    var mapping = googletag.sizeMapping()
-      .addSize([1024, 768], [[728, 90]]) // PC hiển thị 728x90
-      .addSize([0, 0], [[300, 100], [300, 50]]) // Mobile hiển thị 300x100 hoặc 300x50
-      .build();
-
+    // 2. Khai báo Slot với _adSize linh hoạt (Bỏ mapping để chạy đúng danh sách size anh chọn)
     var slot = googletag.defineSlot(_adUnit, _adSize, gpt_id)
-      .defineSizeMapping(mapping)
       .addService(googletag.pubads());
 
     googletag.enableServices();
     googletag.display(gpt_id);
 
-    // 3. Lắng nghe sự kiện để xử lý hiển thị và gắn nút Close
+    // 3. Lắng nghe sự kiện để xử lý hiển thị và gắn nút Close dùng chung
     googletag.pubads().addEventListener('slotRenderEnded', function(event) {
       if (event.slot === slot && !event.isEmpty) {
         // Hiện container khi có quảng cáo trả về
@@ -549,3 +542,4 @@ function randomID() {
   return "netlink-gpt-ad-" + r + "-0";
 
 }
+
