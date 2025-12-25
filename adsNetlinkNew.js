@@ -243,43 +243,29 @@ JavaScript
  * @param {number} _closeBtnPos - Vị trí nút đóng (0: trái, 1: phải, 2: giữa)
  */
 function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300], [300, 400]], _closeBtnPos = 1) {
-  // CHỈ HIỂN THỊ TRÊN PC (Màn hình >= 768px)
   if (window.innerWidth < 768) return;
-
   checkGPTExists();
   var gpt_id = randomID();
   var containerId = 'nl-balloon-container-' + gpt_id;
-
-  // 1. Tạo Container cố định góc phải màn hình
   var html = `
     <div id="${containerId}" style="position: fixed; bottom: 10px; right: 10px; z-index: 2147483646; display: none; transition: all 0.3s;">
-        <div id="wrapper-${gpt_id}" style="position: relative; background: #ffffff; box-shadow: 0 0 15px rgba(0,0,0,0.2); padding: 2px; border-radius: 4px;">
-            <div id="${gpt_id}"></div>
+        <div id="wrapper-${gpt_id}" style="position: relative; background: #ffffff; box-shadow: 0 0 15px rgba(0,0,0,0.2); padding: 2px; border-radius: 4px; max-width: 340px;">
+            <div id="${gpt_id}" style="min-width: 300px;"></div>
         </div>
     </div>
   `;
   document.body.insertAdjacentHTML("beforeend", html);
-
   window.googletag = window.googletag || { cmd: [] };
   googletag.cmd.push(function() {
-    // 2. Khai báo Slot với danh sách size khối lớn
-    var slot = googletag.defineSlot(_adUnit, _adSize, gpt_id)
-      .addService(googletag.pubads());
-
+    var slot = googletag.defineSlot(_adUnit, _adSize, gpt_id).addService(googletag.pubads());
     googletag.enableServices();
     googletag.display(gpt_id);
-
-    // 3. Lắng nghe sự kiện để hiển thị và gắn nút Close dùng chung
     googletag.pubads().addEventListener('slotRenderEnded', function(event) {
       if (event.slot === slot && !event.isEmpty) {
-        // Hiện container khi có quảng cáo trả về
         var container = document.getElementById(containerId);
         if (container) container.style.display = 'block';
-
-        // Gắn nút Close lên wrapper (vPos = 0: nút nằm trên đỉnh banner)
         renderNetlinkMegaClose('wrapper-' + gpt_id, slot, 0, _closeBtnPos);
       } else if (event.slot === slot && event.isEmpty) {
-        // Xóa hoàn toàn container nếu không có quảng cáo
         var container = document.getElementById(containerId);
         if (container) container.remove();
       }
@@ -553,5 +539,6 @@ function randomID() {
   return "netlink-gpt-ad-" + r + "-0";
 
 }
+
 
 
