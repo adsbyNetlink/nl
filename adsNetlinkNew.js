@@ -228,13 +228,24 @@ function NetlinkAdxWipe(_adUnit, _delay = 3000, _closeBtnPos = 1) {
   }, _delay); 
 }
 
+Dạ em sơ suất quá, em đã cập nhật lại điều kiện kiểm tra thiết bị.
+
+Để chỉ hiển thị trên PC và ẩn hoàn toàn trên Mobile, em đã thêm dòng kiểm tra window.innerWidth < 768. Nếu là Mobile, hàm sẽ kết thúc ngay lập tức (return) để không tốn tài nguyên tải script quảng cáo.
+
+Dưới đây là bản chuẩn cuối cùng của hàm NetlinkAdxBalloon:
+
+JavaScript
+
 /**
- * NetlinkAdxBalloon: Quảng cáo nổi góc dưới bên phải
+ * NetlinkAdxBalloon: Quảng cáo nổi góc dưới bên phải - CHỈ HIỂN THỊ PC
  * @param {string} _adUnit - Mã đơn vị quảng cáo
- * @param {array} _adSize - Mảng kích thước mặc định mới
+ * @param {array} _adSize - Mảng kích thước mặc định khối lớn
  * @param {number} _closeBtnPos - Vị trí nút đóng (0: trái, 1: phải, 2: giữa)
  */
 function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300], [300, 400]], _closeBtnPos = 1) {
+  // CHỈ HIỂN THỊ TRÊN PC (Màn hình >= 768px)
+  if (window.innerWidth < 768) return;
+
   checkGPTExists();
   var gpt_id = randomID();
   var containerId = 'nl-balloon-container-' + gpt_id;
@@ -251,24 +262,24 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
 
   window.googletag = window.googletag || { cmd: [] };
   googletag.cmd.push(function() {
-    // 2. Khai báo Slot với _adSize linh hoạt (Bỏ mapping để chạy đúng danh sách size anh chọn)
+    // 2. Khai báo Slot với danh sách size khối lớn
     var slot = googletag.defineSlot(_adUnit, _adSize, gpt_id)
       .addService(googletag.pubads());
 
     googletag.enableServices();
     googletag.display(gpt_id);
 
-    // 3. Lắng nghe sự kiện để xử lý hiển thị và gắn nút Close dùng chung
+    // 3. Lắng nghe sự kiện để hiển thị và gắn nút Close dùng chung
     googletag.pubads().addEventListener('slotRenderEnded', function(event) {
       if (event.slot === slot && !event.isEmpty) {
         // Hiện container khi có quảng cáo trả về
         var container = document.getElementById(containerId);
         if (container) container.style.display = 'block';
 
-        // Gắn nút Close lên wrapper (vPos = 0 để nút nằm trên đỉnh banner Balloon)
+        // Gắn nút Close lên wrapper (vPos = 0: nút nằm trên đỉnh banner)
         renderNetlinkMegaClose('wrapper-' + gpt_id, slot, 0, _closeBtnPos);
       } else if (event.slot === slot && event.isEmpty) {
-        // Xóa hoàn toàn container nếu không có quảng cáo (Backfill trống)
+        // Xóa hoàn toàn container nếu không có quảng cáo
         var container = document.getElementById(containerId);
         if (container) container.remove();
       }
@@ -542,4 +553,5 @@ function randomID() {
   return "netlink-gpt-ad-" + r + "-0";
 
 }
+
 
