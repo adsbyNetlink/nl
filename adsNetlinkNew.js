@@ -183,21 +183,21 @@ function renderNetlinkMegaClose(_targetId, _slot, _vPos = 0, _hPos = 1) {
 
 /**
  * NetlinkAdxWipe: Quảng cáo góc dưới bên phải (300x250)
- * Chỉ hiển thị trên Mobile sau 3 giây delay.
+ * @param {string} _adUnit - Mã đơn vị quảng cáo
+ * @param {number} _delay - Thời gian chờ hiển thị (tính bằng mili giây, ví dụ 3000 hoặc 5000)
+ * @param {number} _closeBtnPos - Vị trí nút đóng (0, 1, 2)
  */
-function NetlinkAdxWipe(_adUnit, _closeBtnPos = 1) {
-  // Chỉ chạy trên Mobile (màn hình < 768px)
+function NetlinkAdxWipe(_adUnit, _delay = 3000, _closeBtnPos = 1) {
+  // Chỉ chạy trên Mobile theo yêu cầu trước đó của anh
   if (window.innerWidth >= 768) return;
 
-  // Delay 3 giây trước khi thực hiện các bước khởi tạo
+  // Sử dụng tham số _delay để điều chỉnh thời gian hiển thị
   setTimeout(function() {
     checkGPTExists();
     var gpt_id = randomID();
     var containerId = 'nl-wipe-container-' + gpt_id;
-
-    // 1. Tạo container cố định ở góc dưới bên phải màn hình
     var html = `
-      <div id="${containerId}" style="position: fixed; bottom: 10px; right: 10px; z-index: 2147483646; display: none; transition: opacity 0.5s;">
+      <div id="${containerId}" style="position: fixed; bottom: 200px; right: 10px; z-index: 2147483646; display: none; transition: opacity 0.5s;">
           <div id="wrapper-${gpt_id}" style="position: relative; background: #ffffff; box-shadow: 0 0 15px rgba(0,0,0,0.2); padding: 2px; border-radius: 4px;">
               <div id="${gpt_id}" style="width: 300px; height: 250px;"></div>
           </div>
@@ -207,28 +207,25 @@ function NetlinkAdxWipe(_adUnit, _closeBtnPos = 1) {
 
     window.googletag = window.googletag || { cmd: [] };
     googletag.cmd.push(function() {
-      // 2. Khai báo slot 300x250
+      // Định dạng 300x250 cố định cho Wipe Mobile
       var slot = googletag.defineSlot(_adUnit, [300, 250], gpt_id).addService(googletag.pubads());
       googletag.enableServices();
       googletag.display(gpt_id);
 
-      // 3. Lắng nghe sự kiện render
       googletag.pubads().addEventListener('slotRenderEnded', function(event) {
         if (event.slot === slot && !event.isEmpty) {
-          // Hiện container sau khi ad đã load xong
           var container = document.getElementById(containerId);
           if (container) container.style.display = 'block';
 
-          // Gắn nút Close (vPos=0: nút nằm trên đỉnh banner, hPos nhận từ tham số)
+          // Gắn nút Close Mega dùng chung (vPos=0 nằm trên đỉnh banner)
           renderNetlinkMegaClose('wrapper-' + gpt_id, slot, 0, _closeBtnPos);
         } else if (event.slot === slot && event.isEmpty) {
-          // Xóa container nếu ad trống để không ảnh hưởng giao diện
           var container = document.getElementById(containerId);
           if (container) container.remove();
         }
       });
     });
-  }, 3000); // 3000ms = 3 giây
+  }, _delay); 
 }
 
 /**
@@ -550,4 +547,5 @@ function randomID() {
   ar.push(r);
 
   return "netlink-gpt-ad-" + r + "-0";
+
 }
