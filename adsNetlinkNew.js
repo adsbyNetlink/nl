@@ -528,9 +528,4 @@ function randomID() {
   ar.push(r);
 
   return "netlink-gpt-ad-" + r + "-0";
-
 }
-
-
-
-
