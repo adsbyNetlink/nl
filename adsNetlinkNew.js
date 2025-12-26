@@ -227,15 +227,6 @@ function NetlinkAdxWipe(_adUnit, _delay = 3000, _closeBtnPos = 1) {
     });
   }, _delay); 
 }
-
-Dạ em sơ suất quá, em đã cập nhật lại điều kiện kiểm tra thiết bị.
-
-Để chỉ hiển thị trên PC và ẩn hoàn toàn trên Mobile, em đã thêm dòng kiểm tra window.innerWidth < 768. Nếu là Mobile, hàm sẽ kết thúc ngay lập tức (return) để không tốn tài nguyên tải script quảng cáo.
-
-Dưới đây là bản chuẩn cuối cùng của hàm NetlinkAdxBalloon:
-
-JavaScript
-
 /**
  * NetlinkAdxBalloon: Quảng cáo nổi góc dưới bên phải - CHỈ HIỂN THỊ PC
  * @param {string} _adUnit - Mã đơn vị quảng cáo
@@ -539,6 +530,7 @@ function randomID() {
   return "netlink-gpt-ad-" + r + "-0";
 
 }
+
 
 
 
