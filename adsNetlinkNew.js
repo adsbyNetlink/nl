@@ -404,55 +404,50 @@ function NetlinkAdxFirstView(_adUnit) {
 }
 
 /**
- * NetlinkAdxFirstViewExt: Popup linh hoạt với logic kiểm soát hiển thị
- * @param {string} _adUnit - Mã đơn vị quảng cáo
- * @param {number} _isDisplay - Trạng thái hiển thị (Thường dùng với Cookie/LocalStorage)
- * @param {array} _pageView - Mảng cấu hình lượt xem trang [số lượt hiện tại, số lượt tối thiểu để hiện]
+ * NetlinkAdxFirstViewExt: Popup nổi linh hoạt với điều kiện thiết bị và trang truy cập
+ * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
+ * @param {number} _isDisplay - 0: Cả PC & MB, 1: Chỉ PC, 2: Chỉ Mobile
+ * @param {array} _pageView - [0]: Tất cả các trang, [1, 3, 5]: Chỉ hiện ở lượt xem trang thứ 1, 3, 5
  * @param {number} _closeBtnPos - Vị trí nút đóng (0, 1, 2)
  */
 function NetlinkAdxFirstViewExt(_adUnit, _isDisplay = 0, _pageView = [0], _closeBtnPos = 1) {
-    // 1. Kiểm tra điều kiện hiển thị (Logic từ file gốc của anh)
-    if (_isDisplay != 0) return;
-    if (_pageView.length > 1 && _pageView[0] < _pageView[1]) return;
-
+    var isMobile = window.innerWidth < 768;
+    if (_isDisplay === 1 && isMobile) return;
+    if (_isDisplay === 2 && !isMobile) return;
+    var storageKey = 'nl_pv_count_' + _adUnit.replace(/[^a-zA-Z0-9]/g, '');
+    var currentPV = parseInt(sessionStorage.getItem(storageKey) || '0') + 1;
+    sessionStorage.setItem(storageKey, currentPV);
+    if (_pageView.length > 0 && _pageView[0] !== 0) {
+        if (_pageView.indexOf(currentPV) === -1) {
+            return;
+        }
+    }
     checkGPTExists();
     var gpt_id = randomID();
     var containerId = 'nl-firstview-ext-container-' + gpt_id;
 
-    // 2. Tạo giao diện Popup (Overlay)
     var html = `
-        <div id="${containerId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2147483646; background: rgba(0,0,0,0.75); display: flex; justify-content: center; align-items: center;">
-            <div id="wrapper-ext-${gpt_id}" style="position: relative; background: #fff; line-height: 0; box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+        <div id="${containerId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2147483646; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;">
+            <div id="wrapper-ext-${gpt_id}" style="position: relative; background: #fff; line-height: 0; box-shadow: 0 0 30px rgba(0,0,0,0.6);">
                 <div id="${gpt_id}"></div>
             </div>
         </div>
     `;
     document.body.insertAdjacentHTML("beforeend", html);
-
     window.googletag = window.googletag || { cmd: [] };
     googletag.cmd.push(function() {
-        // 3. Khai báo tập hợp size linh hoạt (Multi-size)
         var allSizes = [[300, 600], [300, 250], [336, 280], [300, 400], [320, 100]];
-        
         var mapping = googletag.sizeMapping()
-            .addSize([1024, 768], [[300, 600], [300, 400], [336, 280], [300, 250]]) // Desktop
-            .addSize([0, 0], [[300, 250], [336, 280], [320, 100]]) // Mobile
+            .addSize([1024, 768], [[300, 600], [300, 400], [336, 280], [300, 250]])
+            .addSize([0, 0], [[300, 250], [336, 280], [320, 100]])
             .build();
-
-        var slot = googletag.defineSlot(_adUnit, allSizes, gpt_id)
-            .defineSizeMapping(mapping)
-            .addService(googletag.pubads());
-
+        var slot = googletag.defineSlot(_adUnit, allSizes, gpt_id).defineSizeMapping(mapping).addService(googletag.pubads());
         googletag.enableServices();
         googletag.display(gpt_id);
-
-        // 4. Lắng nghe sự kiện để gắn nút Close Mega dùng chung
         googletag.pubads().addEventListener('slotRenderEnded', function(event) {
             if (event.slot === slot && !event.isEmpty) {
-                // Gọi hàm Close đã thống nhất (vPos=0 để nằm trên banner)
                 renderNetlinkMegaClose('wrapper-ext-' + gpt_id, slot, 0, _closeBtnPos);
             } else if (event.slot === slot && event.isEmpty) {
-                // Xóa container nếu không có quảng cáo trả về
                 var container = document.getElementById(containerId);
                 if (container) container.remove();
             }
@@ -529,3 +524,4 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
