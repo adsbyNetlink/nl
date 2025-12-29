@@ -412,23 +412,23 @@ function NetlinkAdxFirstView(_adUnit) {
  */
 function NetlinkAdxFirstViewExt(_adUnit, _isDisplay = 0, _pageView = [0], _closeBtnPos = 1) {
     var isMobile = window.innerWidth < 768;
-    if (_isDisplay === 1 && isMobile) return;
-    if (_isDisplay === 2 && !isMobile) return;
-    var storageKey = 'nl_pv_count_' + _adUnit.replace(/[^a-zA-Z0-9]/g, '');
-    var currentPV = parseInt(sessionStorage.getItem(storageKey) || '0') + 1;
-    sessionStorage.setItem(storageKey, currentPV);
+    // 1. Kiểm tra điều kiện thiết bị
+    if (_isDisplay === 1 && isMobile) return; 
+    if (_isDisplay === 2 && !isMobile) return; 
+    // 2. Logic đếm trang (Landing = 0, Trang con 1 = 1...)
+    var storageKey = 'nl_ext_pv_' + _adUnit.replace(/[^a-zA-Z0-9]/g, '');
+    var currentPV = sessionStorage.getItem(storageKey);
+    currentPV = (currentPV === null) ? 0 : parseInt(currentPV);
+    sessionStorage.setItem(storageKey, currentPV + 1);
     if (_pageView.length > 0 && _pageView[0] !== 0) {
-        if (_pageView.indexOf(currentPV) === -1) {
-            return;
-        }
+        if (_pageView.indexOf(currentPV) === -1) return;
     }
     checkGPTExists();
     var gpt_id = randomID();
     var containerId = 'nl-firstview-ext-container-' + gpt_id;
-
     var html = `
         <div id="${containerId}" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2147483646; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;">
-            <div id="wrapper-ext-${gpt_id}" style="position: relative; background: #fff; line-height: 0; box-shadow: 0 0 30px rgba(0,0,0,0.6);">
+            <div id="wrapper-ext-${gpt_id}" style="position: relative; background: #fff; line-height: 0; box-shadow: 0 0 30px rgba(0,0,0,0.6); max-width: 95vw; max-height: 95vh; overflow: visible;">
                 <div id="${gpt_id}"></div>
             </div>
         </div>
@@ -436,12 +436,15 @@ function NetlinkAdxFirstViewExt(_adUnit, _isDisplay = 0, _pageView = [0], _close
     document.body.insertAdjacentHTML("beforeend", html);
     window.googletag = window.googletag || { cmd: [] };
     googletag.cmd.push(function() {
-        var allSizes = [[300, 600], [300, 250], [336, 280], [300, 400], [320, 100]];
         var mapping = googletag.sizeMapping()
-            .addSize([1024, 768], [[300, 600], [300, 400], [336, 280], [300, 250]])
-            .addSize([0, 0], [[300, 250], [336, 280], [320, 100]])
+            .addSize([1024, 0], [[300, 600], [300, 400], [336, 280], [300, 250]])
+            .addSize([768, 0], [[336, 280], [300, 250]])
+            .addSize([0, 0], [[300, 250], [336, 280], [320, 100], [320, 50]])
             .build();
-        var slot = googletag.defineSlot(_adUnit, allSizes, gpt_id).defineSizeMapping(mapping).addService(googletag.pubads());
+
+        // Tổng hợp tất cả size có thể chạy cho Ad Unit này
+        var allPossibleSizes = [[300, 600], [300, 400], [336, 280], [300, 250], [320, 100], [320, 50]];
+        var slot = googletag.defineSlot(_adUnit, allPossibleSizes, gpt_id).defineSizeMapping(mapping).addService(googletag.pubads());
         googletag.enableServices();
         googletag.display(gpt_id);
         googletag.pubads().addEventListener('slotRenderEnded', function(event) {
@@ -524,4 +527,5 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
