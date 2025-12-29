@@ -450,6 +450,11 @@ function NetlinkAdxFirstViewExt(_adUnit, _isDisplay = 0, _pageView = [0], _close
         googletag.pubads().addEventListener('slotRenderEnded', function(event) {
             if (event.slot === slot && !event.isEmpty) {
                 renderNetlinkMegaClose('wrapper-ext-' + gpt_id, slot, 0, _closeBtnPos);
+                var closeBtn = document.querySelector('#wrapper-ext-' + gpt_id + ' .nl-mega-close');
+                if(closeBtn) {
+                    closeBtn.style.zIndex = "9999";
+                    closeBtn.style.top = "-15px";
+                }
             } else if (event.slot === slot && event.isEmpty) {
                 var container = document.getElementById(containerId);
                 if (container) container.remove();
@@ -527,5 +532,6 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
