@@ -438,8 +438,8 @@ function NetlinkAdxFirstViewExt(_adUnit, _isDisplay = 0, _pageView = [0], _close
     googletag.cmd.push(function() {
         var mapping = googletag.sizeMapping()
             .addSize([1024, 0], [[300, 600], [300, 400], [336, 280], [300, 250]])
-            .addSize([768, 0], [[336, 280], [300, 250]])
-            .addSize([0, 0], [[300, 250], [336, 280], [320, 100], [320, 50]])
+            .addSize([768, 0], [[300, 600], [336, 280], [300, 250]])
+            .addSize([0, 0], [[300, 600], [300, 250], [336, 280], [320, 100], [320, 50]])
             .build();
 
         // Tổng hợp tất cả size có thể chạy cho Ad Unit này
@@ -532,6 +532,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
