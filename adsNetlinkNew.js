@@ -57,56 +57,84 @@ function NetlinkAdxCatfish(_adUnit, _adSize = [320, 100], _closeBtnPos = 1, _bot
   });
 }
 
-function NetlinkAdxCatfishExt(_adUnit, _closeBtnPos = 1) {
-  checkGPTExists();
-  var gpt_id = randomID();
-  var containerId = 'nl-catfish-container-' + gpt_id;
+/**
+ * NetlinkAdxCatfishExt: Quảng cáo Catfish linh hoạt theo thiết bị và lượt xem trang con
+ * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
+ * @param {number} _isDisplay - 0: Cả PC & MB, 1: Chỉ PC, 2: Chỉ Mobile
+ * @param {array} _pageView - [0]: Tất cả các trang, [1, 3, 5]: Chỉ hiện ở trang con thứ 1, 3, 5
+ * @param {number} _closeBtnPos - Vị trí nút đóng (0: Trái, 1: Phải, 2: Giữa)
+ */
+function NetlinkAdxCatfishExt(_adUnit, _isDisplay = 0, _pageView = [0], _closeBtnPos = 1) {
+    var isMobile = window.innerWidth < 768;
 
-  // Tạo container cố định ở Bottom
-  var html = `
-    <div id="${containerId}" style="position: fixed; bottom: 0; left: 0; width: 100%; z-index: 2147483646; display: flex; justify-content: center; pointer-events: none;">
-        <div id="wrapper-${gpt_id}" style="position: relative; pointer-events: auto; background: transparent; transition: all 0.3s;">
-            <div id="${gpt_id}"></div>
-        </div>
-    </div>
-  `;
-  document.body.insertAdjacentHTML("beforeend", html);
+    // 1. Kiểm tra điều kiện thiết bị (_isDisplay)
+    if (_isDisplay === 1 && isMobile) return; 
+    if (_isDisplay === 2 && !isMobile) return; 
 
-  window.googletag = window.googletag || { cmd: [] };
-  googletag.cmd.push(function() {
-    // Tự động Mapping kích thước theo thiết bị
-    var mapping = googletag.sizeMapping()
-      .addSize([1024, 768], [[728, 90], [970, 90], [970, 250]]) // PC: Banner to
-      .addSize([0, 0], [[320, 100], [320, 50], [300, 100], [300, 50]]) // Mobile: Banner nhỏ
-      .build();
-
-    var allPossibleSizes = [[728, 90], [970, 90], [970, 250], [320, 100], [320, 50], [300, 100], [300, 50]];
+    // 2. Kiểm tra điều kiện PageView (Đếm lượt trang con - Landing = 0)
+    var storageKey = 'nl_cat_ext_pv_' + _adUnit.replace(/[^a-zA-Z0-9]/g, '');
+    var currentPV = sessionStorage.getItem(storageKey);
+    currentPV = (currentPV === null) ? 0 : parseInt(currentPV);
     
-    var slot = googletag.defineSlot(_adUnit, allPossibleSizes, gpt_id)
-      .defineSizeMapping(mapping)
-      .addService(googletag.pubads());
+    // Tăng số lượt cho lần truy cập sau
+    sessionStorage.setItem(storageKey, currentPV + 1);
 
-    googletag.enableServices();
-    googletag.display(gpt_id);
+    if (_pageView.length > 0 && _pageView[0] !== 0) {
+        if (_pageView.indexOf(currentPV) === -1) return; // Không nằm trong danh sách chỉ định -> Thoát
+    }
 
-    googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-      if (event.slot === slot && !event.isEmpty) {
-        // Render nút Close lên wrapper
-        renderNetlinkMegaClose('wrapper-' + gpt_id, slot, 0, _closeBtnPos);
+    checkGPTExists();
+    var gpt_id = randomID();
+    var containerId = 'nl-catfish-ext-container-' + gpt_id;
+
+    // 3. Tạo Container cố định dưới đáy màn hình
+    // pointer-events: none để không chặn click của người dùng vào nội dung phía sau nếu ad chưa load
+    var html = `
+        <div id="${containerId}" style="position: fixed; bottom: 0; left: 0; width: 100%; z-index: 2147483646; display: none; justify-content: center; pointer-events: none;">
+            <div id="wrapper-cat-${gpt_id}" style="position: relative; pointer-events: auto; background: transparent; transition: all 0.3s; line-height: 0;">
+                <div id="${gpt_id}"></div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML("beforeend", html);
+
+    window.googletag = window.googletag || { cmd: [] };
+    googletag.cmd.push(function() {
+        // 4. Thiết lập Size Mapping theo yêu cầu (PC: 728x90, MB: 300x100, 300x50)
+        var mapping = googletag.sizeMapping()
+            .addSize([1024, 0], [[728, 90]]) // Chỉ hiện 728x90 trên PC
+            .addSize([0, 0], [[300, 100], [300, 50]]) // Chỉ hiện size khối nhỏ trên Mobile
+            .build();
+
+        var allPossibleSizes = [[728, 90], [300, 100], [300, 50]];
         
-        // Chỉ hiện nền trắng và đổ bóng khi có quảng cáo
-        var wrapper = document.getElementById('wrapper-' + gpt_id);
-        if (wrapper) {
-            wrapper.style.background = '#ffffff';
-            wrapper.style.boxShadow = '0 -2px 10px rgba(0,0,0,0.15)';
-        }
-      } else if (event.slot === slot && event.isEmpty) {
-        // Xóa container nếu không có quảng cáo trả về
-        var container = document.getElementById(containerId);
-        if (container) container.remove();
-      }
+        var slot = googletag.defineSlot(_adUnit, allPossibleSizes, gpt_id)
+            .defineSizeMapping(mapping)
+            .addService(googletag.pubads());
+
+        googletag.enableServices();
+        googletag.display(gpt_id);
+
+        googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+            if (event.slot === slot && !event.isEmpty) {
+                var container = document.getElementById(containerId);
+                var wrapper = document.getElementById('wrapper-cat-' + gpt_id);
+                
+                if (container) container.style.display = 'flex';
+                if (wrapper) {
+                    wrapper.style.background = '#ffffff';
+                    wrapper.style.boxShadow = '0 -2px 10px rgba(0,0,0,0.15)';
+                    wrapper.style.padding = '2px';
+                }
+
+                // Render nút Close (vPos=0 nằm trên banner)
+                renderNetlinkMegaClose('wrapper-cat-' + gpt_id, slot, 0, _closeBtnPos);
+            } else if (event.slot === slot && event.isEmpty) {
+                var container = document.getElementById(containerId);
+                if (container) container.remove();
+            }
+        });
     });
-  });
 }
 
 // 1. Inject CSS dùng chung cho nút Close
@@ -547,6 +575,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
