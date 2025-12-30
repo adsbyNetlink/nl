@@ -459,7 +459,7 @@ function NetlinkAdxFirstViewExt(_adUnit, _isDisplay = 0, _pageView = [0], _close
     // 2. Logic đếm trang (Landing = 0, Trang con 1 = 1...)
     var storageKey = 'nl_ext_pv_' + _adUnit.replace(/[^a-zA-Z0-9]/g, '');
     var currentPV = sessionStorage.getItem(storageKey);
-    currentPV = (currentPV === null) ? 0 : parseInt(currentPV);
+    currentPV = (currentPV === null) ? 1 : parseInt(currentPV);
     sessionStorage.setItem(storageKey, currentPV + 1);
 
     if (_pageView.length > 0 && _pageView[0] !== 0) {
@@ -586,6 +586,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
