@@ -56,13 +56,12 @@ function NetlinkAdxCatfish(_adUnit, _adSize = [320, 100], _closeBtnPos = 1, _bot
     });
   });
 }
-
 /**
- * NetlinkAdxCatfishExt: Quảng cáo Catfish linh hoạt theo thiết bị và lượt xem trang con
+ * NetlinkAdxCatfishExt: Quảng cáo Catfish linh hoạt, đếm PV từ 1 và hiện khi cuộn trang
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  * @param {number} _isDisplay - 0: Cả PC & MB, 1: Chỉ PC, 2: Chỉ Mobile
- * @param {array} _pageView - [0]: Tất cả các trang, [1, 3, 5]: Chỉ hiện ở trang con thứ 1, 3, 5
- * @param {number} _closeBtnPos - Vị trí nút đóng (0: Trái, 1: Phải, 2: Giữa)
+ * @param {array} _pageView - [0]: Tất cả, [1, 3, 5]: Hiện ở lượt xem trang thứ 1, 3, 5
+ * @param {number} _closeBtnPos - Vị trí nút đóng (0, 1, 2)
  */
 function NetlinkAdxCatfishExt(_adUnit, _isDisplay = 0, _pageView = [0], _closeBtnPos = 1) {
     var isMobile = window.innerWidth < 768;
@@ -71,70 +70,82 @@ function NetlinkAdxCatfishExt(_adUnit, _isDisplay = 0, _pageView = [0], _closeBt
     if (_isDisplay === 1 && isMobile) return; 
     if (_isDisplay === 2 && !isMobile) return; 
 
-    // 2. Kiểm tra điều kiện PageView (Đếm lượt trang con - Landing = 0)
-    var storageKey = 'nl_cat_ext_pv_' + _adUnit.replace(/[^a-zA-Z0-9]/g, '');
+    // 2. Logic đếm trang: Bắt đầu từ 1 ngay khi vào website
+    var storageKey = 'nl_cat_ext_pv_v2_' + _adUnit.replace(/[^a-zA-Z0-9]/g, '');
     var currentPV = sessionStorage.getItem(storageKey);
-    currentPV = (currentPV === null) ? 0 : parseInt(currentPV);
     
-    // Tăng số lượt cho lần truy cập sau
-    sessionStorage.setItem(storageKey, currentPV + 1);
+    if (currentPV === null) {
+        currentPV = 1; // Lần đầu vào website tính luôn là 1
+    } else {
+        currentPV = parseInt(currentPV) + 1;
+    }
+    sessionStorage.setItem(storageKey, currentPV);
 
+    // Kiểm tra danh sách hiển thị
     if (_pageView.length > 0 && _pageView[0] !== 0) {
-        if (_pageView.indexOf(currentPV) === -1) return; // Không nằm trong danh sách chỉ định -> Thoát
+        if (_pageView.indexOf(currentPV) === -1) return;
     }
 
-    checkGPTExists();
-    var gpt_id = randomID();
-    var containerId = 'nl-catfish-ext-container-' + gpt_id;
-
-    // 3. Tạo Container cố định dưới đáy màn hình
-    // pointer-events: none để không chặn click của người dùng vào nội dung phía sau nếu ad chưa load
-    var html = `
-        <div id="${containerId}" style="position: fixed; bottom: 0; left: 0; width: 100%; z-index: 2147483646; display: none; justify-content: center; pointer-events: none;">
-            <div id="wrapper-cat-${gpt_id}" style="position: relative; pointer-events: auto; background: transparent; transition: all 0.3s; line-height: 0;">
-                <div id="${gpt_id}"></div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML("beforeend", html);
-
-    window.googletag = window.googletag || { cmd: [] };
-    googletag.cmd.push(function() {
-        // 4. Thiết lập Size Mapping theo yêu cầu (PC: 728x90, MB: 300x100, 300x50)
-        var mapping = googletag.sizeMapping()
-            .addSize([1024, 0], [[728, 90]]) // Chỉ hiện 728x90 trên PC
-            .addSize([0, 0], [[300, 100], [300, 50]]) // Chỉ hiện size khối nhỏ trên Mobile
-            .build();
-
-        var allPossibleSizes = [[728, 90], [300, 100], [300, 50]];
+    // 3. Logic hiển thị khi cuộn trang (Scroll Trigger)
+    var hasTriggered = false;
+    window.addEventListener('scroll', function onCatfishScroll() {
+        if (hasTriggered) return;
         
-        var slot = googletag.defineSlot(_adUnit, allPossibleSizes, gpt_id)
-            .defineSizeMapping(mapping)
-            .addService(googletag.pubads());
-
-        googletag.enableServices();
-        googletag.display(gpt_id);
-
-        googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-            if (event.slot === slot && !event.isEmpty) {
-                var container = document.getElementById(containerId);
-                var wrapper = document.getElementById('wrapper-cat-' + gpt_id);
-                
-                if (container) container.style.display = 'flex';
-                if (wrapper) {
-                    wrapper.style.background = '#ffffff';
-                    wrapper.style.boxShadow = '0 -2px 10px rgba(0,0,0,0.15)';
-                    wrapper.style.padding = '2px';
-                }
-
-                // Render nút Close (vPos=0 nằm trên banner)
-                renderNetlinkMegaClose('wrapper-cat-' + gpt_id, slot, 0, _closeBtnPos);
-            } else if (event.slot === slot && event.isEmpty) {
-                var container = document.getElementById(containerId);
-                if (container) container.remove();
-            }
-        });
+        var scrollPos = window.pageYOffset || document.documentElement.scrollTop;
+        // Ngưỡng cuộn: 100px để đảm bảo người dùng có tương tác mới hiện
+        if (scrollPos > 100) {
+            hasTriggered = true;
+            renderCatfishAd();
+            window.removeEventListener('scroll', onCatfishScroll);
+        }
     });
+
+    function renderCatfishAd() {
+        checkGPTExists();
+        var gpt_id = randomID();
+        var containerId = 'nl-cat-ext-container-' + gpt_id;
+
+        var html = `
+            <div id="${containerId}" style="position: fixed; bottom: 0; left: 0; width: 100%; z-index: 2147483646; display: none; justify-content: center; pointer-events: none;">
+                <div id="wrapper-cat-${gpt_id}" style="position: relative; pointer-events: auto; background: transparent; transition: opacity 0.4s ease-in-out; line-height: 0;">
+                    <div id="${gpt_id}"></div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML("beforeend", html);
+
+        window.googletag = window.googletag || { cmd: [] };
+        googletag.cmd.push(function() {
+            var mapping = googletag.sizeMapping()
+                .addSize([1024, 0], [[728, 90]])
+                .addSize([0, 0], [[300, 100], [300, 50], [320, 100], [320, 50]])
+                .build();
+
+            var slot = googletag.defineSlot(_adUnit, [[728, 90], [300, 100], [300, 50], [320, 100], [320, 50]], gpt_id)
+                .defineSizeMapping(mapping)
+                .addService(googletag.pubads());
+
+            googletag.enableServices();
+            googletag.display(gpt_id);
+
+            googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+                if (event.slot === slot && !event.isEmpty) {
+                    var container = document.getElementById(containerId);
+                    var wrapper = document.getElementById('wrapper-cat-' + gpt_id);
+                    if (container) container.style.display = 'flex';
+                    if (wrapper) {
+                        wrapper.style.background = '#ffffff';
+                        wrapper.style.boxShadow = '0 -2px 10px rgba(0,0,0,0.15)';
+                        wrapper.style.padding = '2px';
+                    }
+                    renderNetlinkMegaClose('wrapper-cat-' + gpt_id, slot, 0, _closeBtnPos);
+                } else if (event.slot === slot && event.isEmpty) {
+                    var container = document.getElementById(containerId);
+                    if (container) container.remove();
+                }
+            });
+        });
+    }
 }
 
 // 1. Inject CSS dùng chung cho nút Close
@@ -575,6 +586,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
