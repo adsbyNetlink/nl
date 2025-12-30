@@ -57,58 +57,69 @@ function NetlinkAdxCatfish(_adUnit, _adSize = [320, 100], _closeBtnPos = 1, _bot
   });
 }
 /**
- * NetlinkAdxCatfishExt: Quảng cáo Catfish linh hoạt, đếm PV từ 1 và hiện khi cuộn trang
+ * NetlinkAdxCatfishExt: Hiện khi cuộn xuống, ẨN khi cuộn lên
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  * @param {number} _isDisplay - 0: Cả PC & MB, 1: Chỉ PC, 2: Chỉ Mobile
- * @param {array} _pageView - [0]: Tất cả, [1, 3, 5]: Hiện ở lượt xem trang thứ 1, 3, 5
+ * @param {array} _pageView - [1, 3, 5]: Hiện ở lượt xem trang thứ 1, 3, 5
  * @param {number} _closeBtnPos - Vị trí nút đóng (0, 1, 2)
  */
 function NetlinkAdxCatfishExt(_adUnit, _isDisplay = 0, _pageView = [0], _closeBtnPos = 1) {
     var isMobile = window.innerWidth < 768;
 
-    // 1. Kiểm tra điều kiện thiết bị (_isDisplay)
     if (_isDisplay === 1 && isMobile) return; 
     if (_isDisplay === 2 && !isMobile) return; 
 
-    // 2. Logic đếm trang: Bắt đầu từ 1 ngay khi vào website
+    // 1. Logic đếm trang (Bắt đầu từ 1)
     var storageKey = 'nl_cat_ext_pv_v2_' + _adUnit.replace(/[^a-zA-Z0-9]/g, '');
     var currentPV = sessionStorage.getItem(storageKey);
-    
-    if (currentPV === null) {
-        currentPV = 1; // Lần đầu vào website tính luôn là 1
-    } else {
-        currentPV = parseInt(currentPV) + 1;
-    }
+    currentPV = (currentPV === null) ? 1 : parseInt(currentPV) + 1;
     sessionStorage.setItem(storageKey, currentPV);
 
-    // Kiểm tra danh sách hiển thị
     if (_pageView.length > 0 && _pageView[0] !== 0) {
         if (_pageView.indexOf(currentPV) === -1) return;
     }
 
-    // 3. Logic hiển thị khi cuộn trang (Scroll Trigger)
-    var hasTriggered = false;
-    window.addEventListener('scroll', function onCatfishScroll() {
-        if (hasTriggered) return;
-        
-        var scrollPos = window.pageYOffset || document.documentElement.scrollTop;
-        // Ngưỡng cuộn: 100px để đảm bảo người dùng có tương tác mới hiện
-        if (scrollPos > 100) {
-            hasTriggered = true;
-            renderCatfishAd();
-            window.removeEventListener('scroll', onCatfishScroll);
+    // 2. Logic Hiển thị/Ẩn khi cuộn chuột
+    var hasRendered = false;
+    var lastScrollTop = 0;
+    var gpt_id = randomID();
+    var containerId = 'nl-cat-ext-container-' + gpt_id;
+
+    window.addEventListener('scroll', function() {
+        var st = window.pageYOffset || document.documentElement.scrollTop;
+        var container = document.getElementById(containerId);
+
+        // A. Nếu cuộn xuống quá 100px: Render ads (nếu chưa có) và Hiện ads
+        if (st > lastScrollTop && st > 100) {
+            if (!hasRendered) {
+                hasRendered = true;
+                renderCatfishAd(gpt_id, containerId);
+            } else if (container) {
+                container.style.display = 'flex';
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }
+        } 
+        // B. Nếu cuộn ngược lên trên: Ẩn ads (giữ lại trong DOM để không tốn tài nguyên load lại)
+        else if (st < lastScrollTop) {
+            if (container) {
+                container.style.opacity = '0';
+                container.style.transform = 'translateY(100%)';
+                // Đợi transition xong thì ẩn hẳn display để không chặn click
+                setTimeout(function() { 
+                    if(container.style.opacity === '0') container.style.display = 'none'; 
+                }, 400);
+            }
         }
-    });
+        lastScrollTop = st <= 0 ? 0 : st;
+    }, false);
 
-    function renderCatfishAd() {
+    function renderCatfishAd(_id, _cId) {
         checkGPTExists();
-        var gpt_id = randomID();
-        var containerId = 'nl-cat-ext-container-' + gpt_id;
-
         var html = `
-            <div id="${containerId}" style="position: fixed; bottom: 0; left: 0; width: 100%; z-index: 2147483646; display: none; justify-content: center; pointer-events: none;">
-                <div id="wrapper-cat-${gpt_id}" style="position: relative; pointer-events: auto; background: transparent; transition: opacity 0.4s ease-in-out; line-height: 0;">
-                    <div id="${gpt_id}"></div>
+            <div id="${_cId}" style="position: fixed; bottom: 0; left: 0; width: 100%; z-index: 2147483646; display: flex; justify-content: center; pointer-events: none; transition: all 0.4s ease-in-out; opacity: 0; transform: translateY(100%);">
+                <div id="wrapper-cat-${_id}" style="position: relative; pointer-events: auto; background: transparent; line-height: 0;">
+                    <div id="${_id}"></div>
                 </div>
             </div>
         `;
@@ -121,27 +132,27 @@ function NetlinkAdxCatfishExt(_adUnit, _isDisplay = 0, _pageView = [0], _closeBt
                 .addSize([0, 0], [[300, 100], [300, 50], [320, 100], [320, 50]])
                 .build();
 
-            var slot = googletag.defineSlot(_adUnit, [[728, 90], [300, 100], [300, 50], [320, 100], [320, 50]], gpt_id)
+            var slot = googletag.defineSlot(_adUnit, [[728, 90], [300, 100], [300, 50], [320, 100], [320, 50]], _id)
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
             googletag.enableServices();
-            googletag.display(gpt_id);
+            googletag.display(_id);
 
             googletag.pubads().addEventListener('slotRenderEnded', function(event) {
                 if (event.slot === slot && !event.isEmpty) {
-                    var container = document.getElementById(containerId);
-                    var wrapper = document.getElementById('wrapper-cat-' + gpt_id);
-                    if (container) container.style.display = 'flex';
+                    var container = document.getElementById(_cId);
+                    var wrapper = document.getElementById('wrapper-cat-' + _id);
+                    if (container) {
+                        container.style.display = 'flex';
+                        setTimeout(() => { container.style.opacity = '1'; container.style.transform = 'translateY(0)'; }, 100);
+                    }
                     if (wrapper) {
                         wrapper.style.background = '#ffffff';
                         wrapper.style.boxShadow = '0 -2px 10px rgba(0,0,0,0.15)';
                         wrapper.style.padding = '2px';
                     }
-                    renderNetlinkMegaClose('wrapper-cat-' + gpt_id, slot, 0, _closeBtnPos);
-                } else if (event.slot === slot && event.isEmpty) {
-                    var container = document.getElementById(containerId);
-                    if (container) container.remove();
+                    renderNetlinkMegaClose('wrapper-cat-' + _id, slot, 0, _closeBtnPos);
                 }
             });
         });
@@ -586,6 +597,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
