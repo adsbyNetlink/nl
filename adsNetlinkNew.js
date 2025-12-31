@@ -428,11 +428,11 @@ function NetlinkAdxFirstView(_adUnit) {
   window.googletag = window.googletag || { cmd: [] };
   googletag.cmd.push(function() {
     // Tập hợp size linh hoạt để tăng CTR
-    var allSizes = [[300, 250], [336, 280], [300, 600], [300, 400], [320, 100]];
+    var allSizes = [[300, 250], [336, 280], [300, 600], [300, 400]];
     
     var mapping = googletag.sizeMapping()
       .addSize([1024, 768], [[300, 600], [300, 400], [336, 280], [300, 250]]) // PC
-      .addSize([0, 0], [[300, 250], [336, 280], [320, 100]]) // Mobile
+      .addSize([0, 0], [[300, 250], [336, 280]]) // Mobile
       .build();
 
     var slot = googletag.defineSlot(_adUnit, allSizes, gpt_id)
@@ -499,11 +499,11 @@ function NetlinkAdxFirstViewExt(_adUnit, _isDisplay = 0, _pageView = [0], _close
             // Tablet: Ưu tiên các size khối
             .addSize([768, 0], [[336, 280], [300, 250]])
             // Mobile: Tuyệt đối không lấy size [300, 600] hay [300, 400] để tránh vỡ màn hình
-            .addSize([0, 0], [[300, 600], [300, 250], [336, 280], [320, 100], [320, 50]])
+            .addSize([0, 0], [[300, 600], [300, 250], [336, 280]])
             .build();
 
         // Tổng hợp tất cả size có thể chạy cho Ad Unit này
-        var allPossibleSizes = [[300, 600], [300, 400], [336, 280], [300, 250], [320, 100], [320, 50]];
+        var allPossibleSizes = [[300, 600], [300, 400], [336, 280], [300, 250]];
 
         var slot = googletag.defineSlot(_adUnit, allPossibleSizes, gpt_id)
             .defineSizeMapping(mapping)
@@ -597,6 +597,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
