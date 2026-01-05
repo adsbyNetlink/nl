@@ -570,6 +570,145 @@ function NetlinkAdxInPage(_adUnit, _marginTop = -1) {
   });
 }
 
+/**
+ * NetlinkAdxScrollReveal: Quảng cáo ẩn dưới nội dung, cuộn để lộ cho ADX
+ * @param {string} _adUnit - Mã đơn vị quảng cáo
+ * @param {string} _target - (Tùy chọn) Selector vùng nội dung nếu muốn chỉ định thủ công
+ */
+function NetlinkAdxScrollReveal(_adUnit, _target = null) {
+    if (window.innerWidth >= 768) return; 
+
+    var contentArea = findSmartContentArea(_target);
+    if (!contentArea) return;
+
+    var paragraphs = contentArea.querySelectorAll('p');
+    if (paragraphs.length < 2) return;
+
+    checkGPTExists(); 
+    var gpt_id = randomID(); 
+    var containerId = 'nl-reveal-adx-' + gpt_id;
+
+    var targetElement = paragraphs[Math.floor(paragraphs.length / 2)];
+    
+    // Tăng height lên 350px để chứa vừa khít size 336x280 và padding
+    var html = `
+        <div id="${containerId}-wrapper" style="width: 100%; height: 350px; margin: 30px 0; position: relative; clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0);">
+            <div id="${containerId}" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 350px; z-index: -1; display: none; justify-content: center; align-items: center; background: #ffffff;">
+                <div id="inner-${gpt_id}" style="position: relative; line-height: 0; min-width: 300px; min-height: 250px;">
+                    <div id="${gpt_id}"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    targetElement.insertAdjacentHTML('afterend', html);
+
+    handleScrollReveal(containerId);
+
+    window.googletag = window.googletag || { cmd: [] };
+    googletag.cmd.push(function() {
+        // Định nghĩa các size chuẩn anh yêu cầu
+        var slot = googletag.defineSlot(_adUnit, [[336, 280], [300, 250]], gpt_id).addService(googletag.pubads());
+        googletag.enableServices();
+        googletag.display(gpt_id);
+
+        googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+            if (event.slot === slot && event.isEmpty) {
+                var wrapper = document.getElementById(containerId + '-wrapper');
+                if (wrapper) wrapper.remove();
+            }
+        });
+    });
+}
+
+/**
+ * NetlinkAsenseScrollReveal: Quảng cáo ẩn dưới nội dung, cuộn để lộ cho Adsense
+ * @param {string} _client - Mã ca-pub
+ * @param {string} _slot - Mã slot quảng cáo
+ * @param {string} _target - (Tùy chọn) Selector vùng nội dung
+ */
+function NetlinkAsenseScrollReveal(_client, _slot, _target = null) {
+    // 1. Chỉ chạy trên Mobile
+    if (window.innerWidth >= 768) return;
+
+    // 2. Kiểm tra và nạp JS gốc của Google Adsense (Dùng hàm anh đã viết)
+    checkAdsenseJSExists(_client);
+
+    // 3. Tìm vùng nội dung thông minh
+    var contentArea = findSmartContentArea(_target);
+    if (!contentArea) return;
+
+    var paragraphs = contentArea.querySelectorAll('p');
+    if (paragraphs.length < 2) return;
+
+    var revealId = 'nl-reveal-asense-' + Math.floor(Math.random() * 1000000);
+    var targetElement = paragraphs[Math.floor(paragraphs.length / 2)];
+
+    // 4. Tạo cấu trúc Reveal (Chiều cao 350px để thoải mái cho size 336x280)
+    var html = `
+        <div id="${revealId}-wrapper" style="width: 100%; height: 350px; margin: 30px 0; position: relative; clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0);">
+            <div id="${revealId}" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 350px; z-index: -1; display: none; justify-content: center; align-items: center; background: #ffffff;">
+                <div style="width: 100%; text-align: center; line-height: 0;">
+                    <ins class="adsbygoogle"
+                         style="display:inline-block;width:336px;height:280px"
+                         data-ad-client="${_client}"
+                         data-ad-slot="${_slot}"></ins>
+                </div>
+            </div>
+        </div>
+    `;
+    targetElement.insertAdjacentHTML('afterend', html);
+
+    // 5. Kích hoạt logic cuộn để hiển thị
+    handleScrollReveal(revealId);
+
+    // 6. Push quảng cáo (Cần bọc trong try-catch để tránh lỗi JS nếu thư viện chưa load kịp)
+    try {
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (e) {
+        console.error("Adsense Reveal Error:", e);
+    }
+}
+
+// Hàm tìm vùng nội dung thông minh
+function findSmartContentArea(_target) {
+    if (_target) return document.querySelector(_target);
+
+    // Danh sách ưu tiên các class nội dung phổ biến
+    var commonSelectors = ['article', '.post-content', '.entry-content', '.content-detail', '.detail-content', '.fck_detail'];
+    for (var i = 0; i < commonSelectors.length; i++) {
+        var el = document.querySelector(commonSelectors[i]);
+        if (el && el.querySelectorAll('p').length > 2) return el;
+    }
+
+    // Nếu không khớp class nào, tìm thẻ div chứa nhiều thẻ <p> nhất
+    var bestDiv = null;
+    var maxP = 0;
+    document.querySelectorAll('div').forEach(div => {
+        var pCount = div.querySelectorAll(':scope > p').length;
+        if (pCount > maxP) {
+            maxP = pCount;
+            bestDiv = div;
+        }
+    });
+    return bestDiv || document.body;
+}
+
+// Hàm xử lý logic hiển thị khi cuộn
+function handleScrollReveal(_containerId) {
+    window.addEventListener('scroll', function() {
+        var wrapper = document.getElementById(_containerId + '-wrapper');
+        var adContainer = document.getElementById(_containerId);
+        if (!wrapper || !adContainer) return;
+
+        var rect = wrapper.getBoundingClientRect();
+        // Chỉ hiển thị 'fixed' khi vùng wrapper nằm trong khung nhìn (Viewport)
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+            adContainer.style.display = 'flex';
+        } else {
+            adContainer.style.display = 'none';
+        }
+    });
+}
 function checkGPTExists() {
   var scripts = document.head.querySelectorAll('script[src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"]');
   if (scripts.length > 0) {
@@ -579,6 +718,21 @@ function checkGPTExists() {
     gpt_script.src = "https://securepubads.g.doubleclick.net/tag/js/gpt.js";
     gpt_script.async = true;
     document.head.appendChild(gpt_script);
+
+    return false;
+  }
+}
+
+function checkAdsenseJSExists(client_id) {
+  var scripts = document.head.querySelectorAll('script[src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+client_id+'"]');
+  if (scripts.length > 0) {
+    return true;
+  } else {
+    var adsense_script = document.createElement("script");
+    adsense_script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client="+client_id;
+    adsense_script.async = true;
+    adsense_script.crossOrigin = "anonymous";
+    document.head.appendChild(adsense_script);
 
     return false;
   }
@@ -597,6 +751,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
