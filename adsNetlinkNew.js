@@ -315,90 +315,77 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
 }
 
 /**
- * NetlinkAdxMultiads: Định dạng quảng cáo thông minh tự động kích hoạt khi cuộn trang
+ * NetlinkAdxMultiads: Tự động chèn nhiều quảng cáo khi cuộn trang
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
- * @param {number} _type - 0: In-content (Chèn giữa bài), 1: Overlay (Nổi giữa màn hình)
- * @param {number} _closeBtnPos - Vị trí nút đóng (0: trái, 1: phải, 2: giữa)
  */
-function NetlinkAdxMultiads(_adUnit, _type = 0, _closeBtnPos = 1) {
-    var isMobile = window.innerWidth < 768;
-    var hasTriggered = false; // Đảm bảo chỉ chạy 1 lần khi đủ điều kiện cuộn
+function NetlinkAdxMultiads(_adUnit) {
+    const isMobile = window.innerWidth < 768;
+    const triggerThreshold = isMobile ? window.innerHeight : 800; // MB: 1 màn hình, PC: ~800px (2 lần cuộn chuột)
+    
+    let lastInsertThreshold = 0; // Vị trí (px) cuối cùng đã chèn quảng cáo
+    let adCount = 0; // Biến đếm số lượng ads đã chèn để tránh trùng ID
 
-    // 1. Lắng nghe sự kiện cuộn trang
     window.addEventListener('scroll', function onScroll() {
-        if (hasTriggered) return;
+        const scrollPos = window.pageYOffset || document.documentElement.scrollTop;
 
-        var scrollPos = window.pageYOffset || document.documentElement.scrollTop;
-        var triggerThreshold = isMobile ? window.innerHeight : 400; // MB: 1 màn hình, PC: ~400px (2-3 lần lăn chuột)
-
-        if (scrollPos >= triggerThreshold) {
-            hasTriggered = true;
-            initMultiads();
-            window.removeEventListener('scroll', onScroll); // Gỡ bỏ listener để tối ưu hiệu năng
+        // Nếu người dùng cuộn xuống thêm một khoảng bằng triggerThreshold so với lần chèn cuối
+        if (scrollPos - lastInsertThreshold >= triggerThreshold) {
+            lastInsertThreshold = scrollPos; // Cập nhật mốc chèn mới
+            insertNewAdSlot();
         }
     });
 
-    function initMultiads() {
+    function insertNewAdSlot() {
         checkGPTExists();
-        var gpt_id = randomID();
-        var containerId = 'nl-multi-container-' + gpt_id;
+        adCount++;
+        const gpt_id = randomID() + '-' + adCount;
+        const containerId = 'nl-multi-container-' + gpt_id;
 
-        // 2. Xác định vị trí chèn và cấu trúc HTML
-        if (_type === 0) {
-            // PHƯƠNG ÁN A: In-content (Tự động quét thẻ P hoặc Div nội dung)
-            var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail') || document.body;
-            var paragraphs = contentArea.querySelectorAll('p');
-            
-            var targetElement;
-            if (paragraphs.length >= 4) {
-                targetElement = paragraphs[Math.floor(paragraphs.length / 2)]; // Chèn vào giữa bài
-            } else {
-                targetElement = contentArea; // Nếu bài ngắn quá thì chèn vào cuối vùng content
+        // 1. Tìm vị trí chèn thông minh (tìm thẻ P gần nhất với vị trí cuộn hiện tại)
+        const contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail') || document.body;
+        const paragraphs = contentArea.querySelectorAll('p');
+        
+        let targetElement = null;
+        const currentViewportBottom = window.pageYOffset + window.innerHeight;
+
+        // Tìm thẻ P nằm phía dưới màn hình hiện tại để chuẩn bị hiện ra khi cuộn tiếp
+        for (let p of paragraphs) {
+            if (p.offsetTop > currentViewportBottom) {
+                targetElement = p;
+                break;
             }
-
-            var html = `<div id="${containerId}" style="margin: 20px auto; text-align: center; position: relative; width: 100%; clear: both;">
-                            <div id="${gpt_id}" style="display: inline-block; min-height: 50px;"></div>
-                        </div>`;
-            targetElement.insertAdjacentHTML('afterend', html);
-
-        } else {
-            // PHƯƠNG ÁN B: Overlay (Nổi giữa màn hình)
-            var html = `
-                <div id="${containerId}" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2147483646; display: none; background: rgba(0,0,0,0.1); padding: 5px; border-radius: 8px;">
-                    <div id="wrapper-${gpt_id}" style="position: relative; background: #fff; box-shadow: 0 0 30px rgba(0,0,0,0.5);">
-                        <div id="${gpt_id}"></div>
-                    </div>
-                </div>`;
-            document.body.insertAdjacentHTML('beforeend', html);
         }
 
-        // 3. Cấu hình GPT Mapping & Display
+        // Nếu không tìm thấy thẻ P phù hợp phía dưới, chèn vào cuối body/content
+        if (!targetElement) targetElement = contentArea;
+
+        const html = `
+            <div id="${containerId}" style="margin: 30px auto; text-align: center; width: 100%; clear: both; display: none;">
+                <div id="${gpt_id}" style="display: inline-block; min-height: 50px;"></div>
+            </div>`;
+        targetElement.insertAdjacentHTML('afterend', html);
+
+        // 2. Khởi tạo GPT cho slot mới
         window.googletag = window.googletag || { cmd: [] };
         googletag.cmd.push(function() {
-            var mapping = googletag.sizeMapping()
-                .addSize([1024, 768], [['fluid'], [728, 90], [970, 250], [750, 250]]) // PC: Ưu tiên Fluid
-                .addSize([0, 0], [[300, 250], [336, 280], [320, 100]]) // MB: Ưu tiên 300x250, 336x280
+            const mapping = googletag.sizeMapping()
+                .addSize([1024, 0], [[728, 90], [970, 250], [750, 250]])
+                .addSize([0, 0], [[300, 250], [336, 280], [320, 100]])
                 .build();
 
-            var adSlot = googletag.defineSlot(_adUnit, ['fluid', [728, 90], [970, 250], [300, 250], [336, 280]], gpt_id)
+            const adSlot = googletag.defineSlot(_adUnit, [[728, 90], [970, 250], [300, 250], [336, 280]], gpt_id)
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
-            googletag.enableServices();
             googletag.display(gpt_id);
+            googletag.pubads().refresh([adSlot]); // Refresh để kích hoạt load slot động
 
-            // 4. Lắng nghe sự kiện để hiện quảng cáo và gắn nút Close
             googletag.pubads().addEventListener('slotRenderEnded', function(event) {
                 if (event.slot === adSlot && !event.isEmpty) {
-                    var container = document.getElementById(containerId);
+                    const container = document.getElementById(containerId);
                     if (container) container.style.display = 'block';
-
-                    // Chỉ hiện nút Close nếu là định dạng Overlay (Type 1) 
-                    // Hoặc hiện cả Type 0 nếu anh muốn người dùng có quyền tắt quảng cáo trong bài
-                    var targetCloseId = (_type === 1) ? 'wrapper-' + gpt_id : containerId;
-                    renderNetlinkMegaClose(targetCloseId, adSlot, 0, _closeBtnPos);
                 } else if (event.slot === adSlot && event.isEmpty) {
-                    var container = document.getElementById(containerId);
+                    const container = document.getElementById(containerId);
                     if (container) container.remove();
                 }
             });
@@ -751,6 +738,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
