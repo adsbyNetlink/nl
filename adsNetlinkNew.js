@@ -326,68 +326,64 @@ function NetlinkAdxMultiads(_adUnit) {
     
     var lastInsertPos = 0; 
     var adCount = 0; 
-    var isProcessing = false; // Khóa chống chèn trùng lặp khi cuộn nhanh
+    var lastPIndex = -1; // Biến quan trọng: Lưu vị trí thẻ P cuối cùng đã dùng
+    var isProcessing = false;
 
     window.addEventListener('scroll', function() {
-        // Nếu đang trong quá trình chèn một Ad thì tạm dừng tính toán Ad tiếp theo
         if (isProcessing) return;
 
         var currentScrollPos = window.pageYOffset || document.documentElement.scrollTop;
 
-        // Kiểm tra khoảng cách cuộn so với vị trí chèn Ad gần nhất
         if (currentScrollPos - lastInsertPos >= triggerThreshold) {
-            isProcessing = true; // Khóa lại
+            isProcessing = true; 
             adCount++;
-            
-            console.log(`%c[MultiAds] Đạt mốc cuộn. Đang xử lý Ad thứ ${adCount}...`, "color: #2980b9;");
-            
-            // Cập nhật vị trí chèn ngay lập tức để mốc tính cho Ad sau chính xác
             lastInsertPos = currentScrollPos; 
             
-            insertNewAdSlot(adCount, function() {
-                // Sau khi chèn xong DOM và gọi GPT, mở khóa để cho phép Ad tiếp theo
-                isProcessing = false;
-            });
+            insertNewAdSlot(adCount);
         }
     });
 
-    function insertNewAdSlot(count, callback) {
+    function insertNewAdSlot(count) {
         checkGPTExists();
         var gpt_id = randomID() + '-' + count;
         var containerId = 'nl-multi-container-' + gpt_id;
 
-        // Tìm vùng nội dung
         var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail') || document.body;
         var paragraphs = contentArea.querySelectorAll('p');
         
         var targetElement = null;
         var currentViewportBottom = window.pageYOffset + window.innerHeight;
+        var chosenIndex = -1;
 
-        // Chỉ tìm thẻ P nằm dưới màn hình hiện tại ít nhất 100px để tránh chèn đè lên mắt người xem
+        // Tìm thẻ P: Phải nằm dưới màn hình VÀ phải có chỉ số lớn hơn thẻ P đã chèn trước đó
         for (var i = 0; i < paragraphs.length; i++) {
-            if (paragraphs[i].offsetTop > currentViewportBottom + 100) {
+            if (i > lastPIndex && paragraphs[i].offsetTop > currentViewportBottom + 50) {
                 targetElement = paragraphs[i];
+                chosenIndex = i;
                 break;
             }
         }
 
-        if (!targetElement) {
-            console.warn(`[MultiAds] Không tìm thấy thẻ P xa hơn, chèn vào cuối nội dung.`);
-            targetElement = contentArea;
+        // Nếu tìm thấy thẻ P hợp lệ
+        if (targetElement) {
+            lastPIndex = chosenIndex; // Cập nhật để Ad sau không chèn vào đây nữa
+            console.log(`%c[MultiAds] Ad ${count}: Chèn thành công sau thẻ P thứ ${chosenIndex + 1}`, "color: #e67e22; font-weight: bold;");
+            
+            var html = `<div id="${containerId}" style="margin: 40px auto; text-align: center; width: 100%; clear: both; min-height: 100px;"><div id="${gpt_id}"></div></div>`;
+            targetElement.insertAdjacentHTML('afterend', html);
+            
+            initGPT(gpt_id, _adUnit, count, containerId);
+        } else {
+            console.warn(`[MultiAds] Ad ${count}: Không tìm thấy thẻ P mới phù hợp phía dưới màn hình.`);
+            adCount--; // Hoàn tác đếm nếu không chèn được
         }
-
-        var html = `
-            <div id="${containerId}" style="margin: 40px auto; text-align: center; width: 100%; clear: both; min-height: 100px;">
-                <div id="${gpt_id}" style="display: inline-block;"></div>
-            </div>`;
         
-        targetElement.insertAdjacentHTML('afterend', html);
-        console.log(`%c[MultiAds] -> Đã chèn Container Ad ${count} sau thẻ P thứ ${i+1}`, "color: #e67e22;");
+        isProcessing = false; // Mở khóa sau khi tìm kiếm xong
+    }
 
-        // Khởi tạo quảng cáo
+    function initGPT(gpt_id, _adUnit, count, containerId) {
         window.googletag = window.googletag || { cmd: [] };
         googletag.cmd.push(function() {
-            // Đảm bảo dịch vụ Google đã bật
             if (count === 1) googletag.enableServices();
 
             var mapping = googletag.sizeMapping()
@@ -405,16 +401,13 @@ function NetlinkAdxMultiads(_adUnit) {
             googletag.pubads().addEventListener('slotRenderEnded', function(event) {
                 if (event.slot === adSlot) {
                     if (!event.isEmpty) {
-                        console.log(`%c[MultiAds] HOÀN TẤT: Ad ${count} đã hiển thị.`, "color: white; background: #27ae60; padding: 2px 5px;");
+                        console.log(`%c[MultiAds] HOÀN TẤT: Ad ${count} hiển thị tại P-${lastPIndex + 1}`, "color: white; background: #27ae60; padding: 2px 5px;");
                     } else {
-                        console.log(`%c[MultiAds] TRỐNG: Google không có Ad cho vị trí ${count}.`, "color: white; background: #c0392b; padding: 2px 5px;");
+                        console.log(`%c[MultiAds] TRỐNG: Slot ${count} không có ads.`, "color: white; background: #c0392b; padding: 2px 5px;");
                         document.getElementById(containerId).style.display = 'none';
                     }
                 }
             });
-
-            // Hoàn tất logic chèn, gọi callback để mở khóa cho Ad tiếp theo
-            if (typeof callback === "function") callback();
         });
     }
 }
@@ -778,6 +771,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
