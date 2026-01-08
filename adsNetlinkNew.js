@@ -552,34 +552,48 @@ function NetlinkAdxInPage(_adUnit, _marginTop = -1) {
   
   // 1. Tạo ID ngẫu nhiên cho slot
   var gpt_id = randomID();
+  console.log(`%c[InPage] Đang khởi tạo AdUnit: ${_adUnit}`, "color: #8e44ad; font-weight: bold;");
   
-  // 2. Tạo thẻ div chứa quảng cáo với kích thước mặc định từ file gốc
+  // 2. Tạo thẻ div chứa quảng cáo
   var adDiv = document.createElement('div');
   adDiv.id = gpt_id;
   adDiv.style.textAlign = "center";
+  adDiv.style.minHeight = "100px"; // Giữ khung để tránh nhảy trang
   
-  // Giữ nguyên logic xử lý marginTop của anh
   if (_marginTop != -1) {
     adDiv.style.marginTop = _marginTop + "px";
   }
 
-  // 3. Sử dụng currentScript để chèn đúng vị trí khách dán code
+  // 3. Xác định vị trí chèn (ngay tại chỗ dán script)
   var currentScript = document.currentScript;
   if (currentScript && currentScript.parentNode) {
       currentScript.parentNode.insertBefore(adDiv, currentScript);
+      console.log(`%c[InPage] -> Đã chèn div container vào vị trí script. ID: ${gpt_id}`, "color: #9b59b6;");
   } else {
-      // Fallback cho trình duyệt cũ
       document.write('<div id="' + gpt_id + '" style="text-align:center;' + (_marginTop != -1 ? 'margin-top:' + _marginTop + 'px;' : '') + '"></div>');
+      console.log(`%c[InPage] -> Trình duyệt cũ: Dùng document.write để tạo container.`, "color: #9b59b6;");
   }
 
-  // 4. Khởi tạo GPT với kích thước mặc định 300x600 như hàm gốc
+  // 4. Khởi tạo GPT
   window.googletag = window.googletag || { cmd: [] };
   googletag.cmd.push(function() {
-    // Khôi phục kích thước [300, 600] cố định như anh yêu cầu
-    googletag.defineSlot(_adUnit, [300, 600], gpt_id).addService(googletag.pubads());
+    var slot = googletag.defineSlot(_adUnit, [300, 600], gpt_id)
+                       .addService(googletag.pubads());
     
     googletag.enableServices();
     googletag.display(gpt_id);
+    
+    // Lắng nghe kết quả trả về từ Google
+    googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+      if (event.slot === slot) {
+        if (!event.isEmpty) {
+          console.log(`%c[InPage] THÀNH CÔNG: Slot ${gpt_id} đã nhận được Ads.`, "color: white; background: #27ae60; padding: 2px 5px;");
+        } else {
+          console.warn(`[InPage] TRỐNG: Google trả về slot trống cho Unit: ${_adUnit}`);
+          adDiv.style.display = 'none'; // Ẩn div nếu không có quảng cáo để tránh khoảng trắng
+        }
+      }
+    });
   });
 }
 
@@ -764,6 +778,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
