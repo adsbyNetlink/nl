@@ -319,69 +319,62 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] Khởi tạo. Quy tắc: MB ~1 màn hình, PC ~800px.", "color: blue; font-weight: bold;");
+    console.log("%c[MultiAds] Khởi tạo. Chế độ chèn theo thẻ P để đảm bảo khoảng cách đều.", "color: blue; font-weight: bold;");
 
     var isMobile = window.innerWidth < 768;
-    var triggerThreshold = isMobile ? window.innerHeight : 800; 
+    // Quy tắc: MB 1 màn hình thường chứa ~3-4 đoạn văn, PC 2 lần cuộn chứa ~6-8 đoạn văn.
+    var pGap = isMobile ? 3 : 6; 
     
-    var lastInsertPos = 0; 
-    var adCount = 0; 
-    var lastPIndex = -1; // Biến quan trọng: Lưu vị trí thẻ P cuối cùng đã dùng
+    var adCount = 0;
+    var lastPInsertedIndex = -2; // Vị trí thẻ P cuối cùng đã chèn ad
     var isProcessing = false;
 
     window.addEventListener('scroll', function() {
         if (isProcessing) return;
 
-        var currentScrollPos = window.pageYOffset || document.documentElement.scrollTop;
+        // Tìm vùng nội dung chính
+        var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog') || document.body;
+        var paragraphs = contentArea.querySelectorAll('p');
+        
+        if (paragraphs.length === 0) return;
 
-        if (currentScrollPos - lastInsertPos >= triggerThreshold) {
-            isProcessing = true; 
-            adCount++;
-            lastInsertPos = currentScrollPos; 
+        var currentScrollPos = window.pageYOffset || document.documentElement.scrollTop;
+        var viewportBottom = currentScrollPos + window.innerHeight;
+
+        // Quét tìm thẻ P đang xuất hiện ở mép dưới màn hình
+        for (var i = 0; i < paragraphs.length; i++) {
+            var pOffset = paragraphs[i].getBoundingClientRect().top + window.pageYOffset;
             
-            insertNewAdSlot(adCount);
+            // ĐIỀU KIỆN CHÈN: 
+            // 1. Thẻ P nằm dưới màn hình (sắp cuộn tới)
+            // 2. Cách thẻ P đã chèn trước đó ít nhất là pGap (đảm bảo khoảng cách đều)
+            if (pOffset > viewportBottom && i >= (lastPInsertedIndex + pGap)) {
+                isProcessing = true;
+                adCount++;
+                lastPInsertedIndex = i; // Đánh dấu chỉ số thẻ P vừa chèn
+                
+                console.log(`%c[MultiAds] Đã tìm thấy vị trí Ad ${adCount} tại thẻ P thứ ${i + 1}`, "color: #e67e22;");
+                insertNewAdSlot(adCount, paragraphs[i], _adUnit);
+                
+                // Mở khóa sau một khoảng ngắn để tránh bắn event scroll liên tục
+                setTimeout(function() { isProcessing = false; }, 500);
+                break;
+            }
         }
     });
 
-    function insertNewAdSlot(count) {
+    function insertNewAdSlot(count, targetElement, unit) {
         checkGPTExists();
         var gpt_id = randomID() + '-' + count;
         var containerId = 'nl-multi-container-' + gpt_id;
 
-        var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail') || document.body;
-        var paragraphs = contentArea.querySelectorAll('p');
+        var html = `
+            <div id="${containerId}" style="margin: 40px auto; text-align: center; width: 100%; clear: both;">
+                <div id="${gpt_id}" style="display: inline-block; min-height: 100px;"></div>
+            </div>`;
         
-        var targetElement = null;
-        var currentViewportBottom = window.pageYOffset + window.innerHeight;
-        var chosenIndex = -1;
+        targetElement.insertAdjacentHTML('afterend', html);
 
-        // Tìm thẻ P: Phải nằm dưới màn hình VÀ phải có chỉ số lớn hơn thẻ P đã chèn trước đó
-        for (var i = 0; i < paragraphs.length; i++) {
-            if (i > lastPIndex && paragraphs[i].offsetTop > currentViewportBottom + 50) {
-                targetElement = paragraphs[i];
-                chosenIndex = i;
-                break;
-            }
-        }
-
-        // Nếu tìm thấy thẻ P hợp lệ
-        if (targetElement) {
-            lastPIndex = chosenIndex; // Cập nhật để Ad sau không chèn vào đây nữa
-            console.log(`%c[MultiAds] Ad ${count}: Chèn thành công sau thẻ P thứ ${chosenIndex + 1}`, "color: #e67e22; font-weight: bold;");
-            
-            var html = `<div id="${containerId}" style="margin: 40px auto; text-align: center; width: 100%; clear: both; min-height: 100px;"><div id="${gpt_id}"></div></div>`;
-            targetElement.insertAdjacentHTML('afterend', html);
-            
-            initGPT(gpt_id, _adUnit, count, containerId);
-        } else {
-            console.warn(`[MultiAds] Ad ${count}: Không tìm thấy thẻ P mới phù hợp phía dưới màn hình.`);
-            adCount--; // Hoàn tác đếm nếu không chèn được
-        }
-        
-        isProcessing = false; // Mở khóa sau khi tìm kiếm xong
-    }
-
-    function initGPT(gpt_id, _adUnit, count, containerId) {
         window.googletag = window.googletag || { cmd: [] };
         googletag.cmd.push(function() {
             if (count === 1) googletag.enableServices();
@@ -391,7 +384,7 @@ function NetlinkAdxMultiads(_adUnit) {
                 .addSize([0, 0], [[300, 250], [336, 280], [320, 100]])
                 .build();
 
-            var adSlot = googletag.defineSlot(_adUnit, [[728, 90], [970, 250], [300, 250], [336, 280]], gpt_id)
+            var adSlot = googletag.defineSlot(unit, [[728, 90], [970, 250], [300, 250], [336, 280]], gpt_id)
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
@@ -401,7 +394,7 @@ function NetlinkAdxMultiads(_adUnit) {
             googletag.pubads().addEventListener('slotRenderEnded', function(event) {
                 if (event.slot === adSlot) {
                     if (!event.isEmpty) {
-                        console.log(`%c[MultiAds] HOÀN TẤT: Ad ${count} hiển thị tại P-${lastPIndex + 1}`, "color: white; background: #27ae60; padding: 2px 5px;");
+                        console.log(`%c[MultiAds] HOÀN TẤT: Ad ${count} hiển thị thành công.`, "color: white; background: #27ae60; padding: 2px 5px;");
                     } else {
                         console.log(`%c[MultiAds] TRỐNG: Slot ${count} không có ads.`, "color: white; background: #c0392b; padding: 2px 5px;");
                         document.getElementById(containerId).style.display = 'none';
@@ -760,6 +753,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
