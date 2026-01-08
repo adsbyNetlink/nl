@@ -319,74 +319,88 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    const isMobile = window.innerWidth < 768;
-    const triggerThreshold = isMobile ? window.innerHeight : 800; // MB: 1 màn hình, PC: ~800px (2 lần cuộn chuột)
+    console.log("%c[MultiAds] Khởi tạo hàm lắng nghe cuộn trang...", "color: blue; font-weight: bold;");
+
+    var isMobile = window.innerWidth < 768;
+    // MB: 1 màn hình (~600-800px), PC: ~800px (2 lần cuộn chuột)
+    var triggerThreshold = isMobile ? window.innerHeight : 800; 
     
-    let lastInsertThreshold = 0; // Vị trí (px) cuối cùng đã chèn quảng cáo
-    let adCount = 0; // Biến đếm số lượng ads đã chèn để tránh trùng ID
+    var lastInsertThreshold = 0; // Dùng 'var' để tránh lỗi Assignment to constant
+    var adCount = 0; 
 
     window.addEventListener('scroll', function onScroll() {
-        const scrollPos = window.pageYOffset || document.documentElement.scrollTop;
+        var scrollPos = window.pageYOffset || document.documentElement.scrollTop;
 
-        // Nếu người dùng cuộn xuống thêm một khoảng bằng triggerThreshold so với lần chèn cuối
         if (scrollPos - lastInsertThreshold >= triggerThreshold) {
-            lastInsertThreshold = scrollPos; // Cập nhật mốc chèn mới
-            insertNewAdSlot();
+            lastInsertThreshold = scrollPos; 
+            adCount++;
+            console.log(`%c[MultiAds] Đã cuộn đủ khoảng cách. Đang tìm vị trí chèn Ad thứ ${adCount}...`, "color: green;");
+            insertNewAdSlot(adCount);
         }
     });
 
-    function insertNewAdSlot() {
+    function insertNewAdSlot(count) {
         checkGPTExists();
-        adCount++;
-        const gpt_id = randomID() + '-' + adCount;
-        const containerId = 'nl-multi-container-' + gpt_id;
+        var gpt_id = randomID() + '-' + count;
+        var containerId = 'nl-multi-container-' + gpt_id;
 
-        // 1. Tìm vị trí chèn thông minh (tìm thẻ P gần nhất với vị trí cuộn hiện tại)
-        const contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail') || document.body;
-        const paragraphs = contentArea.querySelectorAll('p');
+        // Tìm vùng nội dung
+        var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail') || document.body;
+        var paragraphs = contentArea.querySelectorAll('p');
         
-        let targetElement = null;
-        const currentViewportBottom = window.pageYOffset + window.innerHeight;
+        var targetElement = null;
+        var currentViewportBottom = window.pageYOffset + window.innerHeight;
 
-        // Tìm thẻ P nằm phía dưới màn hình hiện tại để chuẩn bị hiện ra khi cuộn tiếp
-        for (let p of paragraphs) {
-            if (p.offsetTop > currentViewportBottom) {
-                targetElement = p;
+        // Thuật toán tìm thẻ P nằm ngay dưới màn hình hiện tại
+        for (var i = 0; i < paragraphs.length; i++) {
+            if (paragraphs[i].offsetTop > currentViewportBottom) {
+                targetElement = paragraphs[i];
                 break;
             }
         }
 
-        // Nếu không tìm thấy thẻ P phù hợp phía dưới, chèn vào cuối body/content
-        if (!targetElement) targetElement = contentArea;
+        if (!targetElement) {
+            targetElement = contentArea;
+            console.warn(`[MultiAds] Không tìm thấy thẻ P phù hợp, chèn vào cuối vùng content.`);
+        } else {
+            console.log(`%c[MultiAds] Vị trí xác định: Sau thẻ P thứ ${i+1}. ID: ${gpt_id}`, "color: #e67e22;");
+        }
 
-        const html = `
-            <div id="${containerId}" style="margin: 30px auto; text-align: center; width: 100%; clear: both; display: none;">
-                <div id="${gpt_id}" style="display: inline-block; min-height: 50px;"></div>
+        var html = `
+            <div id="${containerId}" style="margin: 30px auto; text-align: center; width: 100%; clear: both;">
+                <div id="${gpt_id}" style="display: inline-block; min-height: 50px; background: #f9f9f9; border: 1px dashed #ccc;">
+                    <small style="color: #999;">Đang tải quảng cáo ${count}...</small>
+                </div>
             </div>`;
         targetElement.insertAdjacentHTML('afterend', html);
 
-        // 2. Khởi tạo GPT cho slot mới
+        // Khởi tạo quảng cáo
         window.googletag = window.googletag || { cmd: [] };
         googletag.cmd.push(function() {
-            const mapping = googletag.sizeMapping()
+            var mapping = googletag.sizeMapping()
                 .addSize([1024, 0], [[728, 90], [970, 250], [750, 250]])
                 .addSize([0, 0], [[300, 250], [336, 280], [320, 100]])
                 .build();
 
-            const adSlot = googletag.defineSlot(_adUnit, [[728, 90], [970, 250], [300, 250], [336, 280]], gpt_id)
+            var adSlot = googletag.defineSlot(_adUnit, [[728, 90], [970, 250], [300, 250], [336, 280]], gpt_id)
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
+            // Đảm bảo PubAds đã được enable trước khi gọi hiển thị
+            googletag.enableServices(); 
             googletag.display(gpt_id);
-            googletag.pubads().refresh([adSlot]); // Refresh để kích hoạt load slot động
+            
+            // Chỉ gọi refresh khi slot đã được định nghĩa xong để tránh lỗi PubAdsService
+            googletag.pubads().refresh([adSlot]);
 
             googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-                if (event.slot === adSlot && !event.isEmpty) {
-                    const container = document.getElementById(containerId);
-                    if (container) container.style.display = 'block';
-                } else if (event.slot === adSlot && event.isEmpty) {
-                    const container = document.getElementById(containerId);
-                    if (container) container.remove();
+                if (event.slot === adSlot) {
+                    if (!event.isEmpty) {
+                        console.log(`%c[MultiAds] Thành công: Ad thứ ${count} đã hiển thị!`, "color: white; background: green; padding: 2px 5px;");
+                    } else {
+                        console.log(`%c[MultiAds] Trống: Google không có quảng cáo cho slot thứ ${count}.`, "color: white; background: red; padding: 2px 5px;");
+                        document.getElementById(containerId).remove();
+                    }
                 }
             });
         });
@@ -738,6 +752,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
