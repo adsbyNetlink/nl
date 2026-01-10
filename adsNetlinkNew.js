@@ -380,11 +380,11 @@ function NetlinkAdxMultiads(_adUnit) {
             if (count === 1) googletag.enableServices();
 
             var mapping = googletag.sizeMapping()
-                .addSize([1024, 0], [[300, 250], [336, 280]])
+                .addSize([1024, 0], [[728, 90], [970, 250], [750, 250]])
                 .addSize([0, 0], [[300, 250], [336, 280]])
                 .build();
 
-            var adSlot = googletag.defineSlot(unit, [[300, 250], [336, 280]], gpt_id)
+            var adSlot = googletag.defineSlot(unit, [[728, 90], [970, 250], [750, 250], [300, 250], [336, 280]], gpt_id)
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
@@ -753,6 +753,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
