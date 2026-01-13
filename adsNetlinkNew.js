@@ -364,47 +364,52 @@ function NetlinkAdxMultiads(_adUnit) {
     });
 
     function insertNewAdSlot(count, targetElement, unit) {
-        checkGPTExists();
-        var gpt_id = randomID() + '-' + count;
-        var containerId = 'nl-multi-container-' + gpt_id;
-
-        var html = `
-            <div id="${containerId}" style="margin: 40px auto; text-align: center; width: 100%; clear: both;">
-                <div id="${gpt_id}" style="display: inline-block; min-height: 100px;"></div>
-            </div>`;
-        
-        targetElement.insertAdjacentHTML('afterend', html);
-
-        window.googletag = window.googletag || { cmd: [] };
-        googletag.cmd.push(function() {
-            if (count === 1) googletag.enableServices();
-
-            // Định nghĩa mapping linh hoạt hơn
+	    checkGPTExists();
+	    var gpt_id = randomID() + '-' + count;
+	    var containerId = 'nl-multi-container-' + gpt_id;
+	
+	    var html = `
+	        <div id="${containerId}" style="margin: 30px auto; text-align: center; width: 100%; clear: both;">
+	            <div id="${gpt_id}" style="display: inline-block; min-height: 250px;"></div>
+	        </div>`;
+	    
+	    targetElement.insertAdjacentHTML('afterend', html);
+	
+	    window.googletag = window.googletag || { cmd: [] };
+	    googletag.cmd.push(function() {
+	        // QUAN TRỌNG: Thiết lập để không tự động fetch ads khi display
+	        if (count === 1) {
+	            googletag.pubads().disableInitialLoad(); 
+	            googletag.enableServices();
+	        }
+	
 	        var mapping = googletag.sizeMapping()
-	            .addSize([1024, 0], [[336, 280], [300, 250]]) // PC: Ưu tiên khối lớn
-	            .addSize([0, 0], [[300, 250], [320, 100], [320, 50], [300, 100], [300, 50]]) // Mobile: Thêm size banner
+	            .addSize([1024, 0], [[336, 280], [300, 250]])
+	            .addSize([0, 0], [[300, 250], [320, 100], [320, 50], [336, 280]])
 	            .build();
 	
-	        // Quan trọng: Danh sách size ở defineSlot phải chứa TẤT CẢ các size có trong mapping
-	        var adSlot = googletag.defineSlot(unit, [[336, 280], [300, 250], [320, 100], [320, 50], [300, 100], [300, 50]], gpt_id)
+	        var adSlot = googletag.defineSlot(unit, [[336, 280], [300, 250], [320, 100], [320, 50]], gpt_id)
 	            .defineSizeMapping(mapping)
 	            .addService(googletag.pubads());
-
-            googletag.display(gpt_id);
-            googletag.pubads().refresh([adSlot]);
-
-            googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-                if (event.slot === adSlot) {
-                    if (!event.isEmpty) {
-                        console.log(`%c[MultiAds] HOÀN TẤT: Ad ${count} hiển thị thành công.`, "color: white; background: #27ae60; padding: 2px 5px;");
-                    } else {
-                        console.log(`%c[MultiAds] TRỐNG: Slot ${count} không có ads.`, "color: white; background: #c0392b; padding: 2px 5px;");
-                        document.getElementById(containerId).style.display = 'none';
-                    }
-                }
-            });
-        });
-    }
+	
+	        // Gọi display để đăng ký slot với GPT
+	        googletag.display(gpt_id);
+	        
+	        // Chỉ gọi refresh để lấy ads, tránh việc gọi 2 lần ad request
+	        googletag.pubads().refresh([adSlot]);
+	
+	        googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+	            if (event.slot === adSlot) {
+	                if (!event.isEmpty) {
+	                    console.log(`%c[MultiAds] HOÀN TẤT: Ad ${count} hiển thị.`, "color: white; background: #27ae60; padding: 2px 5px;");
+	                } else {
+	                    console.log(`%c[MultiAds] TRỐNG: Slot ${count} không có ads.`, "color: white; background: #c0392b; padding: 2px 5px;");
+	                    document.getElementById(containerId).style.display = 'none';
+	                }
+	            }
+	        });
+	    });
+	}
 }
 
 /**
@@ -755,6 +760,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
