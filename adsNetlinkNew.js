@@ -318,98 +318,109 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * NetlinkAdxMultiads: Tự động chèn nhiều quảng cáo khi cuộn trang
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
+/**
+ * NetlinkAdxMultiads: Phiên bản sửa lỗi hiển thị linh hoạt PC/Mobile
+ */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] Khởi tạo. Chế độ chèn theo thẻ P để đảm bảo khoảng cách đều.", "color: blue; font-weight: bold;");
+    console.log("%c[MultiAds] Khởi tạo hệ thống chèn thông minh...", "color: blue; font-weight: bold;");
 
     var isMobile = window.innerWidth < 768;
-    // Quy tắc: MB 1 màn hình thường chứa ~3-4 đoạn văn, PC 2 lần cuộn chứa ~6-8 đoạn văn.
-    var pGap = isMobile ? 3 : 6; 
+    // Mobile: Chèn sau mỗi 2 thẻ P. PC: Chèn sau mỗi 5 thẻ P.
+    var pGap = isMobile ? 2 : 5; 
     
     var adCount = 0;
-    var lastPInsertedIndex = -2; // Vị trí thẻ P cuối cùng đã chèn ad
+    var lastPInsertedIndex = -1; 
     var isProcessing = false;
+
+    // Đánh dấu để chỉ gọi disableInitialLoad một lần duy nhất toàn trang
+    if (typeof window.nlMultiInitialized === 'undefined') {
+        window.nlMultiInitialized = false;
+    }
 
     window.addEventListener('scroll', function() {
         if (isProcessing) return;
 
-        // Tìm vùng nội dung chính
-        var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog') || document.body;
+        // Mở rộng selector để quét chính xác vùng nội dung
+        var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
         var paragraphs = contentArea.querySelectorAll('p');
         
         if (paragraphs.length === 0) return;
 
-        var currentScrollPos = window.pageYOffset || document.documentElement.scrollTop;
-        var viewportBottom = currentScrollPos + window.innerHeight;
+        // Lấy vị trí cuộn hiện tại
+        var currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        var viewportHeight = window.innerHeight;
 
-        // Quét tìm thẻ P đang xuất hiện ở mép dưới màn hình
         for (var i = 0; i < paragraphs.length; i++) {
-            var pOffset = paragraphs[i].getBoundingClientRect().top + window.pageYOffset;
+            var rect = paragraphs[i].getBoundingClientRect();
+            var pOffsetTop = rect.top + currentScrollTop;
             
-            // ĐIỀU KIỆN CHÈN: 
-            // 1. Thẻ P nằm dưới màn hình (sắp cuộn tới)
-            // 2. Cách thẻ P đã chèn trước đó ít nhất là pGap (đảm bảo khoảng cách đều)
-            if (pOffset > viewportBottom && i >= (lastPInsertedIndex + pGap)) {
+            // ĐIỀU KIỆN MỚI: 
+            // 1. Thẻ P nằm trong vùng "chuẩn bị nhìn thấy" (cách đáy màn hình 200px)
+            // 2. Thỏa mãn khoảng cách pGap
+            if (rect.top < (viewportHeight + 200) && i >= (lastPInsertedIndex + pGap)) {
+                
+                // Bỏ qua nếu thẻ P quá ngắn (thường là thẻ trống hoặc icon)
+                if (paragraphs[i].innerText.trim().length < 15) continue;
+
                 isProcessing = true;
                 adCount++;
-                lastPInsertedIndex = i; // Đánh dấu chỉ số thẻ P vừa chèn
+                lastPInsertedIndex = i;
                 
-                console.log(`%c[MultiAds] Đã tìm thấy vị trí Ad ${adCount} tại thẻ P thứ ${i + 1}`, "color: #e67e22;");
+                console.log(`%c[MultiAds] Chèn Ad ${adCount} vào sau thẻ P thứ ${i + 1}`, "color: #e67e22;");
                 insertNewAdSlot(adCount, paragraphs[i], _adUnit);
                 
-                // Mở khóa sau một khoảng ngắn để tránh bắn event scroll liên tục
-                setTimeout(function() { isProcessing = false; }, 500);
+                // Mở khóa sau 800ms để tránh việc chèn dồn dập khi scroll nhanh
+                setTimeout(function() { isProcessing = false; }, 800);
                 break;
             }
         }
-    });
+    }, { passive: true });
 
     function insertNewAdSlot(count, targetElement, unit) {
-	    checkGPTExists();
-	    var gpt_id = randomID() + '-' + count;
-	    var containerId = 'nl-multi-container-' + gpt_id;
-	
-	    var html = `
-	        <div id="${containerId}" style="margin: 30px auto; text-align: center; width: 100%; clear: both;">
-	            <div id="${gpt_id}" style="display: inline-block; min-height: 250px;"></div>
-	        </div>`;
-	    
-	    targetElement.insertAdjacentHTML('afterend', html);
-	
-	    window.googletag = window.googletag || { cmd: [] };
-	    googletag.cmd.push(function() {
-	        // QUAN TRỌNG: Thiết lập để không tự động fetch ads khi display
-	        if (count === 1) {
-	            googletag.pubads().disableInitialLoad(); 
-	            googletag.enableServices();
-	        }
-	
-	        var mapping = googletag.sizeMapping()
-	            .addSize([1024, 0], [[336, 280], [300, 250]])
-	            .addSize([0, 0], [[300, 250], [320, 100], [320, 50], [336, 280]])
-	            .build();
-	
-	        var adSlot = googletag.defineSlot(unit, [[336, 280], [300, 250], [320, 100], [320, 50]], gpt_id)
-	            .defineSizeMapping(mapping)
-	            .addService(googletag.pubads());
-	
-	        // Gọi display để đăng ký slot với GPT
-	        googletag.display(gpt_id);
-	        
-	        // Chỉ gọi refresh để lấy ads, tránh việc gọi 2 lần ad request
-	        googletag.pubads().refresh([adSlot]);
-	
-	        googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-	            if (event.slot === adSlot) {
-	                if (!event.isEmpty) {
-	                    console.log(`%c[MultiAds] HOÀN TẤT: Ad ${count} hiển thị.`, "color: white; background: #27ae60; padding: 2px 5px;");
-	                } else {
-	                    console.log(`%c[MultiAds] TRỐNG: Slot ${count} không có ads.`, "color: white; background: #c0392b; padding: 2px 5px;");
-	                    document.getElementById(containerId).style.display = 'none';
-	                }
-	            }
-	        });
-	    });
-	}
+        checkGPTExists();
+        var gpt_id = randomID() + '-' + count;
+        var containerId = 'nl-multi-container-' + gpt_id;
+
+        var html = `
+            <div id="${containerId}" style="margin: 20px auto; text-align: center; width: 100%; clear: both; overflow: hidden;">
+                <div id="${gpt_id}" style="display: inline-block; min-height: 50px;"></div>
+            </div>`;
+        
+        targetElement.insertAdjacentHTML('afterend', html);
+
+        window.googletag = window.googletag || { cmd: [] };
+        googletag.cmd.push(function() {
+            // SỬA LỖI QUAN TRỌNG: Chỉ khởi tạo dịch vụ một lần
+            if (!window.nlMultiInitialized) {
+                googletag.pubads().disableInitialLoad(); 
+                googletag.enableServices();
+                window.nlMultiInitialized = true;
+            }
+
+            var mapping = googletag.sizeMapping()
+                .addSize([1024, 0], [[336, 280], [300, 250]]) // PC
+                .addSize([0, 0], [[300, 250], [320, 100], [320, 50]]) // Mobile
+                .build();
+
+            var adSlot = googletag.defineSlot(unit, [[336, 280], [300, 250], [320, 100], [320, 50]], gpt_id)
+                .defineSizeMapping(mapping)
+                .addService(googletag.pubads());
+
+            googletag.display(gpt_id);
+            googletag.pubads().refresh([adSlot]);
+
+            googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+                if (event.slot === adSlot) {
+                    if (event.isEmpty) {
+                        console.log(`%c[MultiAds] Ad ${count} TRỐNG`, "background: #c0392b; color: #fff;");
+                        document.getElementById(containerId).style.display = 'none';
+                    } else {
+                        console.log(`%c[MultiAds] Ad ${count} HIỂN THỊ`, "background: #27ae60; color: #fff;");
+                    }
+                }
+            });
+        });
+    }
 }
 
 /**
@@ -760,6 +771,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
