@@ -318,58 +318,44 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * NetlinkAdxMultiads: Tự động chèn nhiều quảng cáo khi cuộn trang
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
-/**
- * NetlinkAdxMultiads: Phiên bản sửa lỗi hiển thị linh hoạt PC/Mobile
- */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] Khởi tạo hệ thống chèn thông minh...", "color: blue; font-weight: bold;");
+    console.log("%c[MultiAds] Khởi tạo hệ thống chèn (Bản sửa lỗi hiển thị Mobile)...", "color: blue; font-weight: bold;");
 
     var isMobile = window.innerWidth < 768;
-    // Mobile: Chèn sau mỗi 2 thẻ P. PC: Chèn sau mỗi 5 thẻ P.
+    // Để Gap thấp hơn để dễ kiểm tra trên Mobile
     var pGap = isMobile ? 2 : 5; 
     
     var adCount = 0;
-    var lastPInsertedIndex = -1; 
+    var lastPInsertedIndex = -2; 
     var isProcessing = false;
-
-    // Đánh dấu để chỉ gọi disableInitialLoad một lần duy nhất toàn trang
-    if (typeof window.nlMultiInitialized === 'undefined') {
-        window.nlMultiInitialized = false;
-    }
 
     window.addEventListener('scroll', function() {
         if (isProcessing) return;
 
-        // Mở rộng selector để quét chính xác vùng nội dung
+        // Tìm vùng nội dung
         var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
         var paragraphs = contentArea.querySelectorAll('p');
         
         if (paragraphs.length === 0) return;
 
-        // Lấy vị trí cuộn hiện tại
-        var currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        var viewportHeight = window.innerHeight;
+        var currentScrollPos = window.pageYOffset || document.documentElement.scrollTop;
+        var viewportBottom = currentScrollPos + window.innerHeight;
 
         for (var i = 0; i < paragraphs.length; i++) {
             var rect = paragraphs[i].getBoundingClientRect();
-            var pOffsetTop = rect.top + currentScrollTop;
+            var pOffset = rect.top + window.pageYOffset;
             
-            // ĐIỀU KIỆN MỚI: 
-            // 1. Thẻ P nằm trong vùng "chuẩn bị nhìn thấy" (cách đáy màn hình 200px)
-            // 2. Thỏa mãn khoảng cách pGap
-            if (rect.top < (viewportHeight + 200) && i >= (lastPInsertedIndex + pGap)) {
-                
-                // Bỏ qua nếu thẻ P quá ngắn (thường là thẻ trống hoặc icon)
-                if (paragraphs[i].innerText.trim().length < 15) continue;
+            // Nới lỏng điều kiện pOffset cho Mobile để Ad dễ xuất hiện hơn
+            if (pOffset > (currentScrollPos + 100) && i >= (lastPInsertedIndex + pGap)) {
+                if (paragraphs[i].innerText.trim().length < 10) continue;
 
                 isProcessing = true;
                 adCount++;
                 lastPInsertedIndex = i;
                 
-                console.log(`%c[MultiAds] Chèn Ad ${adCount} vào sau thẻ P thứ ${i + 1}`, "color: #e67e22;");
+                console.log(`%c[MultiAds] Đang chèn Ad ${adCount} vào sau thẻ P thứ ${i + 1}`, "color: #e67e22;");
                 insertNewAdSlot(adCount, paragraphs[i], _adUnit);
                 
-                // Mở khóa sau 800ms để tránh việc chèn dồn dập khi scroll nhanh
                 setTimeout(function() { isProcessing = false; }, 800);
                 break;
             }
@@ -382,40 +368,40 @@ function NetlinkAdxMultiads(_adUnit) {
         var containerId = 'nl-multi-container-' + gpt_id;
 
         var html = `
-            <div id="${containerId}" style="margin: 20px auto; text-align: center; width: 100%; clear: both; overflow: hidden;">
-                <div id="${gpt_id}" style="display: inline-block; min-height: 50px;"></div>
+            <div id="${containerId}" style="margin: 25px auto; text-align: center; width: 100%; clear: both; min-height: 50px;">
+                <div id="${gpt_id}"></div>
             </div>`;
         
         targetElement.insertAdjacentHTML('afterend', html);
 
         window.googletag = window.googletag || { cmd: [] };
         googletag.cmd.push(function() {
-            // SỬA LỖI QUAN TRỌNG: Chỉ khởi tạo dịch vụ một lần
-            if (!window.nlMultiInitialized) {
-                googletag.pubads().disableInitialLoad(); 
-                googletag.enableServices();
-                window.nlMultiInitialized = true;
-            }
+            // XÓA BỎ disableInitialLoad() và enableServices() ở đây 
+            // để tránh xung đột với các hàm quảng cáo khác trên trang
 
             var mapping = googletag.sizeMapping()
-                .addSize([1024, 0], [[336, 280], [300, 250]]) // PC
-                .addSize([0, 0], [[300, 250], [320, 100], [320, 50]]) // Mobile
+                .addSize([1024, 0], [[336, 280], [300, 250]])
+                .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
                 .build();
 
             var adSlot = googletag.defineSlot(unit, [[336, 280], [300, 250], [320, 100], [320, 50]], gpt_id)
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
+            // Đưa lệnh display vào đúng luồng khởi tạo tự động
             googletag.display(gpt_id);
+            
+            // Chỉ refresh nếu thực sự cần thiết, còn không để GPT tự load theo display
             googletag.pubads().refresh([adSlot]);
 
             googletag.pubads().addEventListener('slotRenderEnded', function(event) {
                 if (event.slot === adSlot) {
-                    if (event.isEmpty) {
-                        console.log(`%c[MultiAds] Ad ${count} TRỐNG`, "background: #c0392b; color: #fff;");
-                        document.getElementById(containerId).style.display = 'none';
+                    var container = document.getElementById(containerId);
+                    if (!event.isEmpty) {
+                        console.log(`%c[MultiAds] Ad ${count} HIỂN THỊ`, "background: #27ae60; color: #fff; padding: 2px 5px;");
                     } else {
-                        console.log(`%c[MultiAds] Ad ${count} HIỂN THỊ`, "background: #27ae60; color: #fff;");
+                        console.log(`%c[MultiAds] Ad ${count} TRỐNG`, "background: #c0392b; color: #fff; padding: 2px 5px;");
+                        if (container) container.style.display = 'none';
                     }
                 }
             });
@@ -771,6 +757,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
