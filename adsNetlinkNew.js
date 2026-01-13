@@ -379,14 +379,16 @@ function NetlinkAdxMultiads(_adUnit) {
         googletag.cmd.push(function() {
             if (count === 1) googletag.enableServices();
 
-            var mapping = googletag.sizeMapping()
-                .addSize([1024, 0], [[300, 250], [336, 280]])
-                .addSize([0, 0], [[300, 250], [336, 280]])
-                .build();
-
-            var adSlot = googletag.defineSlot(unit, [[300, 250], [336, 280]], gpt_id)
-                .defineSizeMapping(mapping)
-                .addService(googletag.pubads());
+            // Định nghĩa mapping linh hoạt hơn
+	        var mapping = googletag.sizeMapping()
+	            .addSize([1024, 0], [[336, 280], [300, 250]]) // PC: Ưu tiên khối lớn
+	            .addSize([0, 0], [[300, 250], [320, 100], [320, 50], [300, 100], [300, 50]]) // Mobile: Thêm size banner
+	            .build();
+	
+	        // Quan trọng: Danh sách size ở defineSlot phải chứa TẤT CẢ các size có trong mapping
+	        var adSlot = googletag.defineSlot(unit, [[336, 280], [300, 250], [320, 100], [320, 50], [300, 100], [300, 50]], gpt_id)
+	            .defineSizeMapping(mapping)
+	            .addService(googletag.pubads());
 
             googletag.display(gpt_id);
             googletag.pubads().refresh([adSlot]);
@@ -753,6 +755,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
