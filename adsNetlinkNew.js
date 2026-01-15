@@ -318,89 +318,91 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * NetlinkAdxMultiads: Tự động chèn nhiều quảng cáo khi cuộn trang
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
-function NetlinkAdxMultiads(adUnit) {
-    console.log("%c[MultiAds] Init Multi Ads", "color: blue; font-weight:bold");
+function NetlinkAdxMultiads(_adUnit) {
+    console.log("%c[MultiAds] Khởi tạo hệ thống chèn đa điểm...", "color: blue; font-weight: bold;");
 
     var isMobile = window.innerWidth < 768;
-    var pGap = isMobile ? 4 : 6;
+    var pGap = isMobile ? 3 : 5; 
     var adCount = 0;
-    var lastIndex = -10;
-    var locking = false;
+    var lastPInsertedIndex = -2; 
+    var isProcessing = false;
 
-    window.googletag = window.googletag || { cmd: [] };
+    window.addEventListener('scroll', function() {
+        if (isProcessing) return;
 
-    function insertAd(targetP) {
-        adCount++;
+        var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
+        var paragraphs = contentArea.querySelectorAll('p');
+        
+        if (paragraphs.length === 0) return;
 
-        var gptId = 'gpt-multi-' + Date.now() + '-' + adCount;
-        var wrapId = gptId + '-wrap';
+        var currentScrollPos = window.pageYOffset || document.documentElement.scrollTop;
+        var viewportBottom = currentScrollPos + window.innerHeight;
 
-        targetP.insertAdjacentHTML('afterend', `
-            <div id="${wrapId}" style="margin:20px auto;text-align:center;clear:both">
-                <div id="${gptId}" style="min-height:50px"></div>
-            </div>
-        `);
+        for (var i = 0; i < paragraphs.length; i++) {
+            var rect = paragraphs[i].getBoundingClientRect();
+            var pOffset = rect.top + window.pageYOffset;
+            
+            // Điều kiện chèn: Thẻ P chuẩn bị xuất hiện
+            if (pOffset > viewportBottom && i >= (lastPInsertedIndex + pGap)) {
+                if (paragraphs[i].innerText.trim().length < 15) continue;
 
-        googletag.cmd.push(function () {
-            var mapping = googletag.sizeMapping()
-                .addSize([1024, 0], [[336, 280], [300, 250]])
-                .addSize([0, 0], [[320, 100], [320, 50], [300, 250]])
-                .build();
-
-            var slot = googletag.defineSlot(
-                adUnit,
-                [[336, 280], [300, 250], [320, 100], [320, 50]],
-                gptId
-            ).defineSizeMapping(mapping)
-             .addService(googletag.pubads());
-
-            googletag.display(gptId);
-
-            // 👉 Mobile cần delay refresh
-            setTimeout(function () {
-                try {
-                    googletag.pubads().refresh([slot]);
-                } catch (e) {}
-            }, isMobile ? 1200 : 300);
-
-            googletag.pubads().addEventListener('slotRenderEnded', function (e) {
-                if (e.slot === slot && e.isEmpty) {
-                    console.log(`[MultiAds] Ad ${adCount} EMPTY`);
-                    var wrap = document.getElementById(wrapId);
-                    if (wrap) wrap.style.display = 'none';
-                }
-            });
-        });
-    }
-
-    window.addEventListener('scroll', function () {
-        if (locking) return;
-
-        var content = document.querySelector(
-            'article, .entry-content, .post-content, .content-detail'
-        );
-        if (!content) return;
-
-        var ps = content.querySelectorAll('p');
-        var viewBottom = window.scrollY + window.innerHeight;
-
-        for (let i = 0; i < ps.length; i++) {
-            var top = ps[i].getBoundingClientRect().top + window.scrollY;
-
-            if (
-                top > viewBottom &&
-                i > lastIndex + pGap &&
-                ps[i].innerText.trim().length > 30
-            ) {
-                locking = true;
-                lastIndex = i;
-                insertAd(ps[i]);
-
-                setTimeout(() => locking = false, 1500);
+                isProcessing = true;
+                adCount++;
+                lastPInsertedIndex = i;
+                
+                insertNewAdSlot(adCount, paragraphs[i], _adUnit);
+                
+                setTimeout(function() { isProcessing = false; }, 1000);
                 break;
             }
         }
     }, { passive: true });
+
+    function insertNewAdSlot(count, targetElement, unit) {
+        checkGPTExists();
+        // ID phải duy nhất và không chứa ký tự đặc biệt gây lỗi DOM
+        var gpt_id = 'div-gpt-ad-multi-' + Math.floor(Math.random() * 1000000);
+        var containerId = gpt_id + '-wrapper';
+
+        var html = `
+            <div id="${containerId}" style="margin: 20px auto; text-align: center; width: 100%; clear: both;">
+                <div id="${gpt_id}" style="display: inline-block; min-height: 50px;"></div>
+            </div>`;
+        targetElement.insertAdjacentHTML('afterend', html);
+
+        window.googletag = window.googletag || { cmd: [] };
+        googletag.cmd.push(function() {
+            // KHÔNG gọi enableSingleRequest() hay enableServices() ở đây nữa
+            // Vì các hàm Sticky/Catfish của anh chắc chắn đã gọi chúng rồi.
+
+            var mapping = googletag.sizeMapping()
+                .addSize([1024, 0], [[336, 280], [300, 250]])
+                .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
+                .build();
+
+            var adSlot = googletag.defineSlot(unit, [[336, 280], [300, 250], [320, 100], [320, 50]], gpt_id)
+                .defineSizeMapping(mapping)
+                .addService(googletag.pubads());
+
+            // Lệnh hiển thị cho slot mới chèn
+            googletag.display(gpt_id);
+            
+            // Ép nạp quảng cáo cho riêng slot này
+            googletag.pubads().refresh([adSlot]);
+
+            googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+                if (event.slot === adSlot) {
+                    if (event.isEmpty) {
+                        console.log(`%c[MultiAds] Slot ${count} TRỐNG`, "color: red;");
+                        var container = document.getElementById(containerId);
+                        if (container) container.style.display = 'none';
+                    } else {
+                        console.log(`%c[MultiAds] Slot ${count} HIỂN THỊ`, "color: green; font-weight: bold;");
+                    }
+                }
+            });
+        });
+    }
 }
 
 /**
@@ -751,6 +753,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
