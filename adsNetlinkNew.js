@@ -319,7 +319,7 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] Khởi tạo hệ thống chèn đa điểm...", "color: blue; font-weight: bold;");
+    console.log("%c[MultiAds] Khởi tạo hệ thống chèn (Fix PubAdsService Error - Khoa)...", "color: #2980b9; font-weight: bold;");
 
     var isMobile = window.innerWidth < 768;
     var pGap = isMobile ? 3 : 5; 
@@ -332,18 +332,15 @@ function NetlinkAdxMultiads(_adUnit) {
 
         var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
         var paragraphs = contentArea.querySelectorAll('p');
-        
         if (paragraphs.length === 0) return;
 
-        var currentScrollPos = window.pageYOffset || document.documentElement.scrollTop;
-        var viewportBottom = currentScrollPos + window.innerHeight;
+        var currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        var viewportHeight = window.innerHeight;
 
         for (var i = 0; i < paragraphs.length; i++) {
             var rect = paragraphs[i].getBoundingClientRect();
-            var pOffset = rect.top + window.pageYOffset;
-            
-            // Điều kiện chèn: Thẻ P chuẩn bị xuất hiện
-            if (pOffset > viewportBottom && i >= (lastPInsertedIndex + pGap)) {
+            // Điều kiện chèn: Thẻ P bắt đầu vào vùng chuẩn bị hiển thị
+            if (rect.top < (viewportHeight + 400) && i >= (lastPInsertedIndex + pGap)) {
                 if (paragraphs[i].innerText.trim().length < 15) continue;
 
                 isProcessing = true;
@@ -360,21 +357,18 @@ function NetlinkAdxMultiads(_adUnit) {
 
     function insertNewAdSlot(count, targetElement, unit) {
         checkGPTExists();
-        // ID phải duy nhất và không chứa ký tự đặc biệt gây lỗi DOM
+        // ID Slot duy nhất
         var gpt_id = 'div-gpt-ad-multi-' + Math.floor(Math.random() * 1000000);
         var containerId = gpt_id + '-wrapper';
 
         var html = `
-            <div id="${containerId}" style="margin: 20px auto; text-align: center; width: 100%; clear: both;">
+            <div id="${containerId}" style="margin: 25px auto; text-align: center; width: 100%; clear: both;">
                 <div id="${gpt_id}" style="display: inline-block; min-height: 50px;"></div>
             </div>`;
         targetElement.insertAdjacentHTML('afterend', html);
 
         window.googletag = window.googletag || { cmd: [] };
         googletag.cmd.push(function() {
-            // KHÔNG gọi enableSingleRequest() hay enableServices() ở đây nữa
-            // Vì các hàm Sticky/Catfish của anh chắc chắn đã gọi chúng rồi.
-
             var mapping = googletag.sizeMapping()
                 .addSize([1024, 0], [[336, 280], [300, 250]])
                 .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
@@ -384,11 +378,18 @@ function NetlinkAdxMultiads(_adUnit) {
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
-            // Lệnh hiển thị cho slot mới chèn
+            // QUAN TRỌNG: Gọi display trước để GPT đăng ký slot vào dịch vụ
             googletag.display(gpt_id);
-            
-            // Ép nạp quảng cáo cho riêng slot này
-            googletag.pubads().refresh([adSlot]);
+
+            // Xử lý lỗi "PubAdsService is not enabled"
+            // Kiểm tra nếu dịch vụ đã enabled thì mới refresh, nếu chưa thì đợi
+            if (googletag.pubadsReady || (googletag.pubads && typeof googletag.pubads().getSlots === 'function')) {
+                googletag.pubads().refresh([adSlot]);
+            } else {
+                // Nếu dịch vụ chưa sẵn sàng, gọi enableServices một lần nữa để kích hoạt luồng
+                googletag.enableServices();
+                googletag.pubads().refresh([adSlot]);
+            }
 
             googletag.pubads().addEventListener('slotRenderEnded', function(event) {
                 if (event.slot === adSlot) {
@@ -753,6 +754,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
