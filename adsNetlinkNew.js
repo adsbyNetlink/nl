@@ -319,87 +319,98 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] Khởi tạo bản FIX dứt điểm cho Mobile...NetlinkAds", "color: blue; font-weight: bold;");
+    console.log("%c[MultiAds] Khởi tạo bản FIX 2025 - IntersectionObserver cho Mobile - Khoa", "color: blue; font-weight: bold;");
 
-    var isMobile = window.innerWidth < 768;
-    var pGap = isMobile ? 3 : 5; 
-    var adCount = 0;
-    var lastPInsertedIndex = -2; 
-    var isProcessing = false;
+    const isMobile = window.innerWidth < 768;
+    const pGap = isMobile ? 3 : 5;          // khoảng cách giữa các slot
+    const rootMargin = isMobile ? "400px" : "600px"; // trigger sớm hơn trên mobile
 
-    window.addEventListener('scroll', function() {
-        if (isProcessing) return;
+    let adCount = 0;
+    let lastPInsertedIndex = -pGap - 1;
+    let observer;
 
-        var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
-        var paragraphs = contentArea.querySelectorAll('p');
-        if (paragraphs.length === 0) return;
+    // Tìm content area
+    const contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
+    const paragraphs = Array.from(contentArea.querySelectorAll('p')).filter(p => p.innerText.trim().length >= 30);
 
-        for (var i = 0; i < paragraphs.length; i++) {
-            var rect = paragraphs[i].getBoundingClientRect();
-            // Điều kiện: Sắp cuộn tới (cách 400px)
-            if (rect.top < (window.innerHeight + 400) && i >= (lastPInsertedIndex + pGap)) {
-                if (paragraphs[i].innerText.trim().length < 15) continue;
+    if (paragraphs.length < pGap + 1) {
+        console.log("[MultiAds] Không đủ đoạn văn để chèn ads");
+        return;
+    }
 
-                isProcessing = true;
-                adCount++;
-                lastPInsertedIndex = i;
-                
-                insertNewAdSlot(adCount, paragraphs[i], _adUnit);
-                
-                setTimeout(function() { isProcessing = false; }, 1500); // Tăng thời gian chờ cho MB ổn định
-                break;
-            }
-        }
-    }, { passive: true });
+    // Hàm chèn slot
+    function insertAdSlot(targetElement, count) {
+        const gpt_id = 'div-gpt-ad-multi-' + Date.now() + '-' + count;
+        const containerId = gpt_id + '-wrapper';
 
-    function insertNewAdSlot(count, targetElement, unit) {
-        checkGPTExists();
-        var gpt_id = 'div-gpt-ad-multi-' + Math.floor(Math.random() * 1000000);
-        var containerId = gpt_id + '-wrapper';
-
-        var html = `
-            <div id="${containerId}" class="nl-multi-ad-container" style="margin: 25px auto; text-align: center; width: 100%; clear: both;">
+        const html = `
+            <div id="${containerId}" class="nl-multi-ad-container" style="margin: 30px auto; text-align: center; width: 100%; clear: both;">
                 <div id="${gpt_id}" style="display: inline-block; min-height: 50px;"></div>
             </div>`;
+
         targetElement.insertAdjacentHTML('afterend', html);
 
         window.googletag = window.googletag || { cmd: [] };
-        googletag.cmd.push(function() {
-            var mapping = googletag.sizeMapping()
+        googletag.cmd.push(function () {
+            const mapping = googletag.sizeMapping()
                 .addSize([1024, 0], [[336, 280], [300, 250]])
-                .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
+                .addSize([640, 0],  [[300, 250], [320, 100]])
+                .addSize([0, 0],    [[320, 100], [320, 50], [300, 250], [300, 100]])
                 .build();
 
-            var adSlot = googletag.defineSlot(unit, [[336, 280], [300, 250], [320, 100], [320, 50]], gpt_id)
+            const slot = googletag.defineSlot(_adUnit, [[320, 100], [320, 50], [300, 250], [336, 280]], gpt_id)
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
-            // 1. Đăng ký hiển thị
             googletag.display(gpt_id);
 
-            // 2. GIẢI PHÁP QUAN TRỌNG: Chờ 100ms để DOM Mobile sẵn sàng hoàn toàn
-            setTimeout(function() {
-                if (googletag.pubads().ready) {
-                    googletag.pubads().refresh([adSlot]);
-                } else {
-                    googletag.enableServices();
-                    googletag.pubads().refresh([adSlot]);
-                }
-            }, 100);
+            // Chờ DOM ổn định + refresh (mobile cần lâu hơn)
+            setTimeout(() => {
+                googletag.pubads().refresh([slot]);
+            }, isMobile ? 400 : 150);
 
-            googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-                if (event.slot === adSlot) {
-                    var container = document.getElementById(containerId);
+            googletag.pubads().addEventListener('slotRenderEnded', function (event) {
+                if (event.slot === slot) {
+                    const container = document.getElementById(containerId);
                     if (event.isEmpty) {
-                        console.log(`%c[MultiAds] Slot ${count} TRỐNG trên ${isMobile?'MB':'PC'}`, "color: red;");
+                        console.log(`%c[MultiAds] Slot ${count} TRỐNG trên ${isMobile ? 'MB' : 'PC'}`, "color: orange;");
                         if (container) container.style.display = 'none';
                     } else {
-                        console.log(`%c[MultiAds] Slot ${count} OK trên ${isMobile?'MB':'PC'}`, "color: green; font-weight: bold;");
+                        console.log(`%c[MultiAds] Slot ${count} OK trên ${isMobile ? 'MB' : 'PC'}`, "color: lime; font-weight: bold;");
                     }
                 }
             });
         });
     }
+
+    // Intersection Observer – chuẩn cho mobile
+    observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+
+            const index = paragraphs.indexOf(entry.target);
+            if (index < lastPInsertedIndex + pGap) return;
+
+            lastPInsertedIndex = index;
+            adCount++;
+            insertAdSlot(entry.target, adCount);
+
+            // Optional: unobserve để tiết kiệm tài nguyên
+            observer.unobserve(entry.target);
+        });
+    }, {
+        rootMargin: rootMargin + " 0px",
+        threshold: 0.01
+    });
+
+    // Observe tất cả các p đủ điều kiện
+    paragraphs.forEach((p, idx) => {
+        if (idx >= pGap) {  // không chèn ngay đầu bài
+            observer.observe(p);
+        }
+    });
+
+    console.log(`[MultiAds] Đã observe ${paragraphs.length} đoạn văn - gap = ${pGap}`);
 }
 
 /**
@@ -750,6 +761,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
