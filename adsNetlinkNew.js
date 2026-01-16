@@ -319,7 +319,7 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] Khởi tạo hệ thống chèn (Fix PubAdsService Error - Khoa)...", "color: #2980b9; font-weight: bold;");
+    console.log("%c[MultiAds] Khởi tạo hệ thống chèn thông minh...Netlink", "color: blue; font-weight: bold;");
 
     var isMobile = window.innerWidth < 768;
     var pGap = isMobile ? 3 : 5; 
@@ -332,15 +332,16 @@ function NetlinkAdxMultiads(_adUnit) {
 
         var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
         var paragraphs = contentArea.querySelectorAll('p');
+        
         if (paragraphs.length === 0) return;
 
-        var currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        var viewportHeight = window.innerHeight;
+        var currentScrollPos = window.pageYOffset || document.documentElement.scrollTop;
+        var viewportBottom = currentScrollPos + window.innerHeight;
 
         for (var i = 0; i < paragraphs.length; i++) {
             var rect = paragraphs[i].getBoundingClientRect();
-            // Điều kiện chèn: Thẻ P bắt đầu vào vùng chuẩn bị hiển thị
-            if (rect.top < (viewportHeight + 400) && i >= (lastPInsertedIndex + pGap)) {
+            // Điều kiện: Cách đáy màn hình 400px thì bắt đầu nạp
+            if (rect.top < (window.innerHeight + 400) && i >= (lastPInsertedIndex + pGap)) {
                 if (paragraphs[i].innerText.trim().length < 15) continue;
 
                 isProcessing = true;
@@ -349,7 +350,7 @@ function NetlinkAdxMultiads(_adUnit) {
                 
                 insertNewAdSlot(adCount, paragraphs[i], _adUnit);
                 
-                setTimeout(function() { isProcessing = false; }, 1000);
+                setTimeout(function() { isProcessing = false; }, 1200);
                 break;
             }
         }
@@ -357,7 +358,6 @@ function NetlinkAdxMultiads(_adUnit) {
 
     function insertNewAdSlot(count, targetElement, unit) {
         checkGPTExists();
-        // ID Slot duy nhất
         var gpt_id = 'div-gpt-ad-multi-' + Math.floor(Math.random() * 1000000);
         var containerId = gpt_id + '-wrapper';
 
@@ -378,27 +378,28 @@ function NetlinkAdxMultiads(_adUnit) {
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
-            // QUAN TRỌNG: Gọi display trước để GPT đăng ký slot vào dịch vụ
+            // Đăng ký slot với hệ thống
             googletag.display(gpt_id);
 
-            // Xử lý lỗi "PubAdsService is not enabled"
-            // Kiểm tra nếu dịch vụ đã enabled thì mới refresh, nếu chưa thì đợi
-            if (googletag.pubadsReady || (googletag.pubads && typeof googletag.pubads().getSlots === 'function')) {
+            // GIẢI PHÁP DỨT ĐIỂM: 
+            // Kiểm tra trạng thái dịch vụ trước khi gọi refresh. 
+            // Nếu chưa enabled (thường gặp trên MB), ta gọi enableServices() để kích hoạt luồng cho slot mới.
+            if (googletag.pubads().ready) {
                 googletag.pubads().refresh([adSlot]);
             } else {
-                // Nếu dịch vụ chưa sẵn sàng, gọi enableServices một lần nữa để kích hoạt luồng
                 googletag.enableServices();
                 googletag.pubads().refresh([adSlot]);
             }
 
+            // Lắng nghe Render
             googletag.pubads().addEventListener('slotRenderEnded', function(event) {
                 if (event.slot === adSlot) {
                     if (event.isEmpty) {
-                        console.log(`%c[MultiAds] Slot ${count} TRỐNG`, "color: red;");
+                        console.log(`%c[MultiAds] Slot ${count} TRỐNG`, "color: #c0392b;");
                         var container = document.getElementById(containerId);
                         if (container) container.style.display = 'none';
                     } else {
-                        console.log(`%c[MultiAds] Slot ${count} HIỂN THỊ`, "color: green; font-weight: bold;");
+                        console.log(`%c[MultiAds] Slot ${count} HIỂN THỊ`, "color: #27ae60; font-weight: bold;");
                     }
                 }
             });
@@ -754,6 +755,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
