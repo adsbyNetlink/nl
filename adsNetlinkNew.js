@@ -319,7 +319,7 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] Khởi tạo bản FIX dứt điểm xung đột Service...", "color: blue; font-weight: bold;");
+    console.log("%c[MultiAds] Khởi tạo bản FIX dứt điểm khoảng trắng...", "color: blue; font-weight: bold;");
 
     var isMobile = window.innerWidth < 768;
     var pGap = isMobile ? 3 : 5; 
@@ -328,16 +328,14 @@ function NetlinkAdxMultiads(_adUnit) {
 
     window.googletag = window.googletag || { cmd: [] };
 
-    // --- SỬA LỖI XUNG ĐỘT Ở ĐÂY ---
     googletag.cmd.push(function() {
-        // Chỉ gọi cấu hình nếu service chưa được kích hoạt
         if (!googletag.pubadsReady) {
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
         }
     });
 
-    var observerOptions = { rootMargin: '400px', threshold: 0.1 };
+    // Cấu hình theo dõi hiển thị
     var observer = new IntersectionObserver(function(entries) {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -350,7 +348,7 @@ function NetlinkAdxMultiads(_adUnit) {
                 }
             }
         });
-    }, observerOptions);
+    }, { rootMargin: '400px', threshold: 0.1 });
 
     var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
     var paragraphs = contentArea.querySelectorAll('p');
@@ -365,8 +363,9 @@ function NetlinkAdxMultiads(_adUnit) {
         var gpt_id = 'div-gpt-ad-multi-' + Math.floor(Math.random() * 1000000);
         var containerId = gpt_id + '-wrapper';
 
+        // Tạo khung ban đầu nhưng ẩn đi bằng display:none
         var html = `
-            <div id="${containerId}" class="nl-multi-ad-container" style="margin: 20px auto; text-align: center; width: 100%; min-height: 250px; display: block; clear: both;">
+            <div id="${containerId}" class="nl-multi-ad-container" style="margin: 0 auto; text-align: center; width: 100%; display: none; clear: both;">
                 <div id="${gpt_id}"></div>
             </div>`;
         targetElement.insertAdjacentHTML('afterend', html);
@@ -381,15 +380,27 @@ function NetlinkAdxMultiads(_adUnit) {
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
-            // THỰC THI: Quan trọng nhất cho MB
-            googletag.display(gpt_id);
-            
-            // Ép refresh ngay lập tức cho slot vừa tạo
-            if (googletag.pubadsReady || googletag.pubads().ready) {
-                googletag.pubads().refresh([adSlot]);
-            }
+            // LẮNG NGHE SỰ KIỆN RENDER ĐỂ XỬ LÝ KHOẢNG TRẮNG
+            googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+                if (event.slot === adSlot) {
+                    var container = document.getElementById(containerId);
+                    if (event.isEmpty) {
+                        // Nếu không có Ads -> Xóa luôn container
+                        console.log(`%c[MultiAds] Slot ${count} TRỐNG -> Đã ẩn khung`, "color: red;");
+                        if (container) container.remove();
+                    } else {
+                        // Nếu có Ads -> Hiện khung và thêm margin
+                        console.log(`%c[MultiAds] Slot ${count} OK -> Hiển thị`, "color: green; font-weight: bold;");
+                        if (container) {
+                            container.style.display = 'block';
+                            container.style.margin = '20px auto';
+                        }
+                    }
+                }
+            });
 
-            console.log(`%c[MultiAds] Slot ${count} đã gọi lệnh Display & Refresh trên MB`, "color: green; font-weight: bold;");
+            googletag.display(gpt_id);
+            googletag.pubads().refresh([adSlot]);
         });
     }
 }
@@ -742,6 +753,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
