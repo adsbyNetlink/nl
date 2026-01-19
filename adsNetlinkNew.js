@@ -319,7 +319,7 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] Bản FIX dứt điểm hiển thị PC & MB...", "color: blue; font-weight: bold;");
+    console.log("%c[MultiAds] Khởi tạo bản FIX TRIỆT ĐỂ - Ưu tiên hiển thị...", "color: white; background: red; padding: 5px; font-weight: bold;");
 
     var isMobile = window.innerWidth < 768;
     var pGap = isMobile ? 3 : 5; 
@@ -328,44 +328,37 @@ function NetlinkAdxMultiads(_adUnit) {
 
     window.googletag = window.googletag || { cmd: [] };
 
-    // Khởi tạo cơ bản, cho phép gọi nhiều lần không lỗi
+    // BƯỚC 1: Đảm bảo Service luôn sẵn sàng nhưng không ghi đè cấu hình cũ
     googletag.cmd.push(function() {
-        googletag.pubads().enableSingleRequest(); // Giữ nguyên để tối ưu PC
+        googletag.pubads().enableAsyncRendering();
         googletag.enableServices();
     });
 
     var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
     var paragraphs = contentArea.querySelectorAll('p');
 
-    // Sử dụng scroll event truyền thống nhưng tối ưu để MB nhạy hơn
-    var scrollTimeout;
     window.addEventListener('scroll', function() {
-        if (scrollTimeout) return;
-        
-        scrollTimeout = setTimeout(function() {
-            for (var i = 0; i < paragraphs.length; i++) {
-                var rect = paragraphs[i].getBoundingClientRect();
-                // Khoảng cách 600px để MB có đủ thời gian load trước khi user cuộn tới
-                if (rect.top < (window.innerHeight + 600) && i >= (lastPInsertedIndex + pGap)) {
-                    if (paragraphs[i].innerText.trim().length < 15) continue;
+        for (var i = 0; i < paragraphs.length; i++) {
+            var rect = paragraphs[i].getBoundingClientRect();
+            // Tăng khoảng cách nhận diện lên 800px để MB có thời gian phản hồi
+            if (rect.top < (window.innerHeight + 800) && i >= (lastPInsertedIndex + pGap)) {
+                if (paragraphs[i].innerText.trim().length < 15) continue;
 
-                    adCount++;
-                    lastPInsertedIndex = i;
-                    insertNewAdSlot(adCount, paragraphs[i], _adUnit);
-                }
+                adCount++;
+                lastPInsertedIndex = i;
+                insertNewAdSlot(adCount, paragraphs[i], _adUnit);
             }
-            scrollTimeout = null;
-        }, 200); // MB xử lý mỗi 200ms để không lag
+        }
     }, { passive: true });
 
     function insertNewAdSlot(count, targetElement, unit) {
         var gpt_id = 'div-gpt-ad-multi-' + Math.floor(Math.random() * 1000000);
         var containerId = gpt_id + '-wrapper';
 
-        // ĐỂ CHIỀU CAO TỐI THIỂU ĐỂ GOOGLE NHẬN DIỆN ĐƯỢC SLOT
+        // Tạo khung với kích thước cố định tối thiểu để Google "thấy"
         var html = `
-            <div id="${containerId}" class="nl-multi-ad-container" style="margin: 10px auto; text-align: center; width: 100%; clear: both; min-height: 1px;">
-                <div id="${gpt_id}"></div>
+            <div id="${containerId}" class="nl-multi-ad-container" style="margin: 20px auto; text-align: center; width: 100%; clear: both;">
+                <div id="${gpt_id}" style="min-width: 300px; min-height: 250px;"></div>
             </div>`;
         targetElement.insertAdjacentHTML('afterend', html);
 
@@ -375,29 +368,31 @@ function NetlinkAdxMultiads(_adUnit) {
                 .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
                 .build();
 
+            // ĐỊNH NGHĨA SLOT
             var adSlot = googletag.defineSlot(unit, [[300, 250], [320, 100], [320, 50]], gpt_id)
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
-            // QUAN TRỌNG: Gọi Display trước khi Refresh
-            googletag.display(gpt_id);
-            
-            // Trên Mobile cần delay một chút để đảm bảo slot đã nằm trong DOM
-            setTimeout(function() {
-                googletag.pubads().refresh([adSlot]);
-            }, 50);
-
-            // Xử lý ẩn khung nếu sau khi nạp vẫn trống
+            // BƯỚC PHÁT HIỆN LỖI: Lắng nghe xem Google có phản hồi không
             googletag.pubads().addEventListener('slotRenderEnded', function(event) {
                 if (event.slot === adSlot) {
                     var container = document.getElementById(containerId);
                     if (event.isEmpty) {
-                        if (container) container.style.display = 'none';
+                        console.warn(`[MultiAds] Slot ${count} TRỐNG (Unfilled) - Kiểm tra AdUnit hoặc Inventory!`);
+                        if (container) container.remove();
                     } else {
-                        if (container) container.style.margin = '25px auto';
+                        console.log(`%c[MultiAds] Slot ${count} HIỂN THỊ THÀNH CÔNG!`, "color: white; background: green; padding: 2px;");
                     }
                 }
             });
+
+            // GỌI HIỂN THỊ TRỰC TIẾP
+            googletag.display(gpt_id);
+            
+            // Kỹ thuật ép nạp cho slot động (Crucial for Mobile)
+            setTimeout(function() {
+                googletag.pubads().refresh([adSlot], {changeCorrelator: false});
+            }, 100);
         });
     }
 }
@@ -750,6 +745,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
