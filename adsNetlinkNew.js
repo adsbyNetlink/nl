@@ -319,138 +319,80 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] FIX v4 - Hybrid Observer + Scroll fallback + GPT LazyLoad Optimized", "color: blue; font-weight: bold;");
+    console.log("%c[MultiAds] Khởi tạo bản tối ưu PC/MB...", "color: blue; font-weight: bold;");
 
-    const isMobile = window.innerWidth < 768;
-    const pGap = isMobile ? 4 : 6; // Tăng gap nhẹ để giảm số ads, tăng fill rate
-    const rootMargin = isMobile ? "800px" : "1000px"; // Trigger sớm hơn
-    const minTextLength = 15;
+    var isMobile = window.innerWidth < 768;
+    var pGap = isMobile ? 3 : 5; 
+    var adCount = 0;
+    var lastPInsertedIndex = -2;
 
-    let adCount = 0;
-    let lastInsertedIndex = -pGap - 1;
-    let observer = null;
-
-    const contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content, .entry, main, [class*="content"], body') || document.body;
-    let paragraphs = Array.from(contentArea.querySelectorAll('p, div > p, li, .content p'))
-        .filter(el => el.innerText.trim().length >= minTextLength && !el.closest('.ad-container, .nl-multi-ad-container'));
-
-    if (paragraphs.length < pGap + 2) {
-        console.warn("[MultiAds] Không đủ nội dung để chèn ads (chỉ " + paragraphs.length + " đoạn)");
-        return;
-    }
-
-    const maxAds = Math.floor(paragraphs.length / pGap); // Giới hạn max ads để tránh overfill
-    console.log(`[MultiAds] Found ${paragraphs.length} eligible paragraphs - gap=${pGap} - maxAds=${maxAds}`);
-
+    // Đảm bảo GPT được khởi tạo đúng cách
     window.googletag = window.googletag || { cmd: [] };
-    googletag.cmd.push(() => {
-        googletag.pubads().enableLazyLoad({
-            fetchMarginPercent: 300,   // Fetch khi cách 3x viewport
-            renderMarginPercent: 50,   // Render khi cách 0.5x viewport
-            mobileScaling: 2.0         // Tăng scaling mobile
-        });
-        googletag.pubads().collapseEmptyDivs(true); // Collapse nếu empty
-        // googletag.pubads().enableSingleRequest(); // Uncomment nếu dùng SRA
+    googletag.cmd.push(function() {
+        // Chỉ gọi một lần duy nhất cho toàn trang
+        googletag.pubads().enableSingleRequest(); 
         googletag.enableServices();
     });
 
-    function insertAdSlot(targetEl, count) {
-        const gpt_id = 'div-gpt-ad-multi-' + Date.now() + count;
-        const containerId = gpt_id + '-wrapper';
+    // Sử dụng IntersectionObserver để "bắt" vị trí chính xác hơn trên MB
+    var observerOptions = {
+        root: null,
+        rootMargin: '400px', // Load trước khi cuộn tới 400px
+        threshold: 0.1
+    };
 
-        const html = `
-            <div id="${containerId}" class="nl-multi-ad-container" style="margin: 35px auto; text-align: center; width: 100%; clear: both; min-height: 100px;">
-                <div id="${gpt_id}" style="display: inline-block;"></div>
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                var index = parseInt(entry.target.getAttribute('data-p-index'));
+                if (index >= (lastPInsertedIndex + pGap)) {
+                    adCount++;
+                    lastPInsertedIndex = index;
+                    insertNewAdSlot(adCount, entry.target, _adUnit);
+                    observer.unobserve(entry.target); // Insert xong thì ngừng theo dõi P đó
+                }
+            }
+        });
+    }, observerOptions);
+
+    // Gắn observer cho các đoạn văn bản
+    var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
+    var paragraphs = contentArea.querySelectorAll('p');
+    paragraphs.forEach((p, idx) => {
+        if (p.innerText.trim().length > 15) {
+            p.setAttribute('data-p-index', idx);
+            observer.observe(p);
+        }
+    });
+
+    function insertNewAdSlot(count, targetElement, unit) {
+        var gpt_id = 'div-gpt-ad-multi-' + Math.floor(Math.random() * 1000000);
+        var containerId = gpt_id + '-wrapper';
+
+        var html = `
+            <div id="${containerId}" class="nl-multi-ad-container" style="margin: 20px auto; text-align: center; width: 100%; min-height: 50px;">
+                <div id="${gpt_id}"></div>
             </div>`;
-        targetEl.insertAdjacentHTML('afterend', html);
+        targetElement.insertAdjacentHTML('afterend', html);
 
-        googletag.cmd.push(() => {
-            const mapping = googletag.sizeMapping()
-                .addSize([1024, 0], [[728, 90], [336, 280], [300, 250]])
-                .addSize([768, 0], [[300, 250], [320, 100]])
-                .addSize([0, 0], [[320, 100], [320, 50], [300, 250], [300, 100]])
+        googletag.cmd.push(function() {
+            var mapping = googletag.sizeMapping()
+                .addSize([1024, 0], [[336, 280], [300, 250]]) // PC
+                .addSize([768, 0], [[300, 250]])            // Tablet
+                .addSize([0, 0], [[300, 250], [320, 100], [320, 50]]) // Mobile
                 .build();
 
-            const slot = googletag.defineSlot(_adUnit, [[728, 90], [336, 280], [300, 250], [320, 100], [320, 50], [300, 100]], gpt_id)
+            var adSlot = googletag.defineSlot(unit, [[300, 250], [320, 100], [320, 50]], gpt_id)
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
+            // Thực thi hiển thị ngay trong cmd queue
             googletag.display(gpt_id);
+            googletag.pubads().refresh([adSlot]);
 
-            // Chỉ refresh nếu container đã gần viewport (tránh gọi thừa)
-            setTimeout(() => {
-                const cont = document.getElementById(containerId);
-                if (cont) {
-                    const rect = cont.getBoundingClientRect();
-                    if (rect.top < window.innerHeight + 400) { // Nếu ở gần view
-                        console.log(`[MultiAds] Slot ${count} gần viewport -> initial refresh`);
-                        googletag.pubads().refresh([slot]);
-                    }
-                }
-            }, 300);
-
-            // Listener để check empty và retry
-            googletag.pubads().addEventListener('slotRenderEnded', e => {
-                if (e.slot === slot) {
-                    const cont = document.getElementById(containerId);
-                    if (e.isEmpty) {
-                        console.warn(`[MultiAds] Slot ${count} EMPTY trên ${isMobile ? 'MB' : 'PC'}`);
-                        if (cont) cont.style.display = 'none';
-                        // Retry refresh sau 3s nếu empty
-                        setTimeout(() => {
-                            console.log(`[MultiAds] Slot ${count} empty -> retry refresh`);
-                            googletag.pubads().refresh([slot]);
-                        }, 3000);
-                    } else {
-                        console.log(`%c[MultiAds] Slot ${count} OK (${e.size}) trên ${isMobile ? 'MB' : 'PC'}`, "color: lime; font-weight: bold;");
-                    }
-                }
-            });
+            console.log(`%c[MultiAds] Đang gọi Slot ${count} trên ${isMobile?'MB':'PC'}`, "color: orange;");
         });
     }
-
-    observer = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting || adCount >= maxAds) return;
-            const idx = paragraphs.indexOf(entry.target);
-            if (idx < 0 || idx < lastInsertedIndex + pGap) return;
-
-            lastInsertedIndex = idx;
-            adCount++;
-            insertAdSlot(entry.target, adCount);
-            observer.unobserve(entry.target);
-        });
-    }, {
-        root: null,
-        rootMargin: rootMargin + " 0px",
-        threshold: 0
-    });
-
-    paragraphs.forEach((p, i) => {
-        if (i >= pGap) observer.observe(p);
-    });
-
-    window.addEventListener('scroll', () => {
-        if (adCount >= maxAds) return;
-
-        for (let i = lastInsertedIndex + pGap; i < paragraphs.length; i++) {
-            const rect = paragraphs[i].getBoundingClientRect();
-            if (rect.top < window.innerHeight + 1000) {
-                lastInsertedIndex = i;
-                adCount++;
-                insertAdSlot(paragraphs[i], adCount);
-                break;
-            }
-        }
-    }, { passive: true });
-
-    setTimeout(() => {
-        if (adCount === 0) {
-            console.log("[MultiAds] Force check đầu tiên...");
-        }
-    }, 3000);
-
-    console.log("[MultiAds] Initialized - Hybrid mode active");
 }
 
 /**
@@ -801,6 +743,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
