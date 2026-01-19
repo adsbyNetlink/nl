@@ -319,28 +319,25 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] Khởi tạo bản tối ưu PC/MB...", "color: blue; font-weight: bold;");
+    console.log("%c[MultiAds] Khởi tạo bản FIX dứt điểm xung đột Service...", "color: blue; font-weight: bold;");
 
     var isMobile = window.innerWidth < 768;
     var pGap = isMobile ? 3 : 5; 
     var adCount = 0;
     var lastPInsertedIndex = -2;
 
-    // Đảm bảo GPT được khởi tạo đúng cách
     window.googletag = window.googletag || { cmd: [] };
+
+    // --- SỬA LỖI XUNG ĐỘT Ở ĐÂY ---
     googletag.cmd.push(function() {
-        // Chỉ gọi một lần duy nhất cho toàn trang
-        googletag.pubads().enableSingleRequest(); 
-        googletag.enableServices();
+        // Chỉ gọi cấu hình nếu service chưa được kích hoạt
+        if (!googletag.pubadsReady) {
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        }
     });
 
-    // Sử dụng IntersectionObserver để "bắt" vị trí chính xác hơn trên MB
-    var observerOptions = {
-        root: null,
-        rootMargin: '400px', // Load trước khi cuộn tới 400px
-        threshold: 0.1
-    };
-
+    var observerOptions = { rootMargin: '400px', threshold: 0.1 };
     var observer = new IntersectionObserver(function(entries) {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -349,13 +346,12 @@ function NetlinkAdxMultiads(_adUnit) {
                     adCount++;
                     lastPInsertedIndex = index;
                     insertNewAdSlot(adCount, entry.target, _adUnit);
-                    observer.unobserve(entry.target); // Insert xong thì ngừng theo dõi P đó
+                    observer.unobserve(entry.target);
                 }
             }
         });
     }, observerOptions);
 
-    // Gắn observer cho các đoạn văn bản
     var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
     var paragraphs = contentArea.querySelectorAll('p');
     paragraphs.forEach((p, idx) => {
@@ -370,27 +366,30 @@ function NetlinkAdxMultiads(_adUnit) {
         var containerId = gpt_id + '-wrapper';
 
         var html = `
-            <div id="${containerId}" class="nl-multi-ad-container" style="margin: 20px auto; text-align: center; width: 100%; min-height: 50px;">
+            <div id="${containerId}" class="nl-multi-ad-container" style="margin: 20px auto; text-align: center; width: 100%; min-height: 250px; display: block; clear: both;">
                 <div id="${gpt_id}"></div>
             </div>`;
         targetElement.insertAdjacentHTML('afterend', html);
 
         googletag.cmd.push(function() {
             var mapping = googletag.sizeMapping()
-                .addSize([1024, 0], [[336, 280], [300, 250]]) // PC
-                .addSize([768, 0], [[300, 250]])            // Tablet
-                .addSize([0, 0], [[300, 250], [320, 100], [320, 50]]) // Mobile
+                .addSize([1024, 0], [[336, 280], [300, 250]])
+                .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
                 .build();
 
             var adSlot = googletag.defineSlot(unit, [[300, 250], [320, 100], [320, 50]], gpt_id)
                 .defineSizeMapping(mapping)
                 .addService(googletag.pubads());
 
-            // Thực thi hiển thị ngay trong cmd queue
+            // THỰC THI: Quan trọng nhất cho MB
             googletag.display(gpt_id);
-            googletag.pubads().refresh([adSlot]);
+            
+            // Ép refresh ngay lập tức cho slot vừa tạo
+            if (googletag.pubadsReady || googletag.pubads().ready) {
+                googletag.pubads().refresh([adSlot]);
+            }
 
-            console.log(`%c[MultiAds] Đang gọi Slot ${count} trên ${isMobile?'MB':'PC'}`, "color: orange;");
+            console.log(`%c[MultiAds] Slot ${count} đã gọi lệnh Display & Refresh trên MB`, "color: green; font-weight: bold;");
         });
     }
 }
@@ -743,6 +742,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
