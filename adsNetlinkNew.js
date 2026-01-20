@@ -319,58 +319,54 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[Debug] Đang kiểm tra Ad Unit: " + _adUnit, "color: white; background: black; padding: 5px;");
+    console.log("%c[MultiAds] Bản Rollback tối ưu - Phục hồi hiển thị PC & MB...", "color: white; background: blue; padding: 5px;");
 
-    // 1. Tìm đoạn văn đầu tiên
-    var firstP = document.querySelector('article p, .post-content p, .entry-content p, .content-detail p, .fck_detail p, #content_blog p, .detail-content p');
-    
-    if (!firstP) {
-        console.error("[Debug] Không tìm thấy đoạn văn (P) nào để chèn!");
-        return;
-    }
+    var isMobile = window.innerWidth < 768;
+    var pGap = isMobile ? 3 : 5; 
+    var adCount = 0;
+    var lastPInsertedIndex = -2;
 
-    // 2. Tạo ID và khung hiển thị cố định (không ẩn, không xóa)
-    var gpt_id = 'div-gpt-ad-debug-12345';
-    var html = `
-        <div id="${gpt_id}-wrapper" style="margin: 30px auto; text-align: center; border: 2px dashed red;">
-            <p style="font-size: 10px; color: red;">DEBUG SLOT - ĐANG CHỜ ADS...</p>
-            <div id="${gpt_id}" style="min-width: 300px; min-height: 250px; background: #eee;"></div>
-        </div>`;
-    
-    firstP.insertAdjacentHTML('afterend', html);
-
-    // 3. Đăng ký với GAM
     window.googletag = window.googletag || { cmd: [] };
-    googletag.cmd.push(function() {
-        // Xóa các định nghĩa cũ nếu có để tránh xung đột ID
-        googletag.destroySlots();
 
-        var mapping = googletag.sizeMapping()
-            .addSize([1024, 0], [[336, 280], [300, 250]])
-            .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
-            .build();
+    // Lắng nghe cuộn để chèn DIV
+    window.addEventListener('scroll', function() {
+        var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
+        var paragraphs = contentArea.querySelectorAll('p');
 
-        var slot = googletag.defineSlot(_adUnit, [[300, 250], [320, 100], [320, 50]], gpt_id)
-            .defineSizeMapping(mapping)
-            .addService(googletag.pubads());
+        for (var i = 0; i < paragraphs.length; i++) {
+            var rect = paragraphs[i].getBoundingClientRect();
+            if (rect.top < (window.innerHeight + 800) && i >= (lastPInsertedIndex + pGap)) {
+                if (paragraphs[i].innerText.trim().length < 15) continue;
 
-        googletag.enableServices();
-        
-        // Gọi hiển thị
-        googletag.display(gpt_id);
-        googletag.pubads().refresh([slot]);
+                adCount++;
+                lastPInsertedIndex = i;
+                
+                // CHÈN SLOT
+                var gpt_id = 'div-gpt-ad-multi-' + Math.floor(Math.random() * 1000000);
+                var html = `<div id="${gpt_id}-wrapper" style="margin: 25px auto; text-align: center; min-height: 250px;">
+                                <div id="${gpt_id}"></div>
+                            </div>`;
+                paragraphs[i].insertAdjacentHTML('afterend', html);
 
-        // Theo dõi phản hồi từ Server
-        googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-            if (event.slot === slot) {
-                if (event.isEmpty) {
-                    console.warn("[Debug Result] Server Google phản hồi: TRỐNG (Unfilled)");
-                } else {
-                    console.log("%c[Debug Result] Server Google phản hồi: CÓ QUẢNG CÁO!", "color: white; background: green;");
-                }
+                // GỌI GOOGLE - CHỈ DÙNG DISPLAY, KHÔNG DÙNG REFRESH
+                (function(id, unit) {
+                    googletag.cmd.push(function() {
+                        var mapping = googletag.sizeMapping()
+                            .addSize([1024, 0], [[336, 280], [300, 250]])
+                            .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
+                            .build();
+
+                        googletag.defineSlot(unit, [[300, 250], [320, 100], [320, 50]], id)
+                            .defineSizeMapping(mapping)
+                            .addService(googletag.pubads());
+
+                        // QUAN TRỌNG: Chỉ cần lệnh này là đủ để Google tự nạp Ads
+                        googletag.display(id); 
+                    });
+                })(gpt_id, _adUnit);
             }
-        });
-    });
+        }
+    }, { passive: true });
 }
 
 /**
@@ -722,6 +718,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
