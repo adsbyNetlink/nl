@@ -318,251 +318,105 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * NetlinkAdxMultiads: Tự động chèn nhiều quảng cáo khi cuộn trang
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
-function NetlinkAdxMultiads(_adUnit, options = {}) {
-  try {
-    console.log(
-      "%c[MultiAds] NetlinkAdxMultiads FINAL - Stable PC/MB",
-      "color:#fff;background:#111;padding:4px 8px;border-radius:6px;"
+function NetlinkAdxMultiads(_adUnit) {
+  if (!_adUnit) return;
+
+  checkGPTExists();
+  window.googletag = window.googletag || { cmd: [] };
+
+  var isMB = window.innerWidth < 768;
+  var GAP = isMB ? 3 : 5;          // khoảng cách chèn ads
+  var MIN = 15;                    // đoạn đủ chữ mới chèn
+  var MAX = isMB ? 6 : 8;          // giới hạn số ads/bài
+
+  var content = document.querySelector('#content_blog, article, .entry-content, .post-content, .detail-content, .fck_detail') || document.body;
+  var ps = content.querySelectorAll('p');
+  if (!ps || ps.length < GAP + 2) return;
+
+  var inserted = 0;
+  var lastIndex = -9999;
+  var busy = false;
+
+  function insertAfter(p, idx) {
+    if (!p || inserted >= MAX) return;
+    if (idx < lastIndex + GAP) return;
+
+    var txt = (p.innerText || '').trim();
+    if (txt.length < MIN) return;
+
+    lastIndex = idx;
+    inserted++;
+
+    var gpt_id = randomID() + '-m' + inserted;
+    var wrapId = 'nl-multi-wrap-' + gpt_id;
+
+    p.insertAdjacentHTML('afterend',
+      '<div id="' + wrapId + '" class="nl-multi-ad-container" style="margin:20px auto;text-align:center;clear:both;">' +
+        '<div id="' + gpt_id + '" style="display:inline-block;min-height:50px"></div>' +
+      '</div>'
     );
 
-    // =========================
-    // CONFIG
-    // =========================
-    const isMobile = window.innerWidth < 768;
+    googletag.cmd.push(function () {
+      try {
+        var mapping = googletag.sizeMapping()
+          .addSize([1024, 0], [[336, 280], [300, 250], [728, 90]])
+          .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
+          .build();
 
-    const cfg = {
-      pGap: isMobile ? 4 : 6,               // khoảng cách đoạn chèn ads
-      minTextLength: 30,                    // đoạn đủ dài mới chèn
-      maxAds: isMobile ? 6 : 8,             // giới hạn ads trong bài
-      rootMargin: isMobile ? 900 : 1100,    // trigger sớm hơn viewport
-      throttleMs: 250,
-      debug: true,
-      ...options
-    };
+        var slot = googletag.defineSlot(
+          _adUnit,
+          [[336, 280], [300, 250], [728, 90], [320, 100], [320, 50]],
+          gpt_id
+        ).defineSizeMapping(mapping).addService(googletag.pubads());
 
-    // =========================
-    // GPT SAFE INIT (ONLY ONCE)
-    // =========================
-    window.googletag = window.googletag || { cmd: [] };
+        googletag.enableServices();
+        googletag.display(gpt_id);
 
-    if (!window.__NL_MULTIADS_GPT_INITED__) {
-      window.__NL_MULTIADS_GPT_INITED__ = true;
+        // refresh trễ hơn để MB dễ fill hơn
+        setTimeout(function () {
+          try { googletag.pubads().refresh([slot]); } catch(e){}
+        }, 800);
 
-      googletag.cmd.push(function () {
-        try {
-          // quan trọng: collapse empty div
-          googletag.pubads().collapseEmptyDivs(true);
-
-          // LazyLoad giúp mobile ổn hơn + giảm request
-          googletag.pubads().enableLazyLoad({
-            fetchMarginPercent: 300,
-            renderMarginPercent: 50,
-            mobileScaling: 2.0
-          });
-
-          // Nếu site anh đã bật SRA ở nơi khác thì KHÔNG bật lại
-          // googletag.pubads().enableSingleRequest();
-
-          googletag.enableServices();
-
-          if (cfg.debug) console.log("[MultiAds] GPT services enabled (1 lần duy nhất)");
-        } catch (e) {
-          console.warn("[MultiAds] GPT init error:", e);
-        }
-      });
-    }
-
-    // =========================
-    // SLOT RENDER LISTENER (ONLY ONCE)
-    // =========================
-    if (!window.__NL_MULTIADS_LISTENER__) {
-      window.__NL_MULTIADS_LISTENER__ = true;
-
-      googletag.cmd.push(function () {
-        try {
-          googletag.pubads().addEventListener("slotRenderEnded", function (event) {
-            try {
-              const slotId = event.slot.getSlotElementId();
-              const wrap = document.getElementById(slotId + "-wrap");
-              if (!wrap) return;
-
-              if (event.isEmpty) {
-                // empty -> remove wrapper (không trắng)
-                wrap.remove();
-                if (cfg.debug) console.warn("[MultiAds] EMPTY -> removed:", slotId);
-              } else {
-                // ok -> show wrapper chuẩn spacing
-                wrap.style.height = "auto";
-                wrap.style.margin = "24px auto";
-                wrap.style.overflow = "visible";
-                if (cfg.debug) console.log("[MultiAds] OK:", slotId, "size=", event.size);
-              }
-            } catch (e) {}
-          });
-        } catch (e) {
-          console.warn("[MultiAds] addEventListener error:", e);
-        }
-      });
-    }
-
-    // =========================
-    // FIND CONTENT + PARAGRAPHS
-    // =========================
-    const contentArea =
-      document.querySelector(
-        "article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content, .entry, main"
-      ) || document.body;
-
-    let paragraphs = Array.from(contentArea.querySelectorAll("p"))
-      .filter(p => {
-        const txt = (p.innerText || "").trim();
-        if (txt.length < cfg.minTextLength) return false;
-        if (p.closest(".nl-multi-ad-container")) return false;
-        return true;
-      });
-
-    if (paragraphs.length < cfg.pGap + 2) {
-      console.warn("[MultiAds] Not enough paragraphs:", paragraphs.length);
-      return;
-    }
-
-    // =========================
-    // INSERT STATE
-    // =========================
-    let inserted = 0;
-    let lastInsertedIndex = -9999;
-
-    // chống insert trùng khi scroll nhiều
-    const insertedTargets = new WeakSet();
-
-    // =========================
-    // BUILD SLOT
-    // =========================
-    function createAdAfter(targetEl) {
-      if (!targetEl || insertedTargets.has(targetEl)) return;
-      if (inserted >= cfg.maxAds) return;
-
-      insertedTargets.add(targetEl);
-      inserted++;
-
-      const slotId = "div-gpt-nl-multi-" + Date.now() + "-" + inserted;
-      const wrapId = slotId + "-wrap";
-
-      // wrapper ban đầu height=0 để không tạo khoảng trắng nếu empty
-      const html = `
-        <div id="${wrapId}" class="nl-multi-ad-container"
-          style="display:block;width:100%;height:0;margin:0;overflow:hidden;clear:both;text-align:center;">
-          <div id="${slotId}" style="display:inline-block;"></div>
-        </div>
-      `;
-
-      targetEl.insertAdjacentHTML("afterend", html);
-
-      googletag.cmd.push(function () {
-        try {
-          // mapping size chuẩn PC/MB
-          const mapping = googletag.sizeMapping()
-            .addSize([1024, 0], [[728, 90], [336, 280], [300, 250]])
-            .addSize([768, 0], [[336, 280], [300, 250], [320, 100]])
-            .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
-            .build();
-
-          const slot = googletag.defineSlot(
-            _adUnit,
-            [[728, 90], [336, 280], [300, 250], [320, 100], [320, 50]],
-            slotId
-          )
-          .defineSizeMapping(mapping)
-          .addService(googletag.pubads());
-
-          googletag.display(slotId);
-
-          // refresh nhẹ sau 600ms (đủ thời gian auction) -> mobile ổn hơn
-          setTimeout(function () {
-            try {
-              googletag.pubads().refresh([slot]);
-            } catch (e) {}
-          }, 600);
-
-          if (cfg.debug) console.log("[MultiAds] Inserted slot:", slotId);
-        } catch (e) {
-          console.warn("[MultiAds] define/display error:", e);
-          const wrap = document.getElementById(wrapId);
-          if (wrap) wrap.remove();
-        }
-      });
-    }
-
-    // =========================
-    // OBSERVER (BEST)
-    // =========================
-    let observer = null;
-
-    if ("IntersectionObserver" in window) {
-      observer = new IntersectionObserver(
-        function (entries) {
-          entries.forEach(entry => {
-            if (!entry.isIntersecting) return;
-            if (inserted >= cfg.maxAds) return;
-
-            const idx = paragraphs.indexOf(entry.target);
-            if (idx < 0) return;
-            if (idx < lastInsertedIndex + cfg.pGap) return;
-
-            lastInsertedIndex = idx;
-            createAdAfter(entry.target);
-            observer.unobserve(entry.target);
-          });
-        },
-        { root: null, rootMargin: cfg.rootMargin + "px 0px", threshold: 0 }
-      );
-
-      paragraphs.forEach((p, i) => {
-        if (i >= cfg.pGap) observer.observe(p);
-      });
-
-      if (cfg.debug) console.log("[MultiAds] Observer mode ON");
-    }
-
-    // =========================
-    // SCROLL FALLBACK (SAFE THROTTLE)
-    // =========================
-    let lastRun = 0;
-    window.addEventListener(
-      "scroll",
-      function () {
-        const now = Date.now();
-        if (now - lastRun < cfg.throttleMs) return;
-        lastRun = now;
-
-        if (inserted >= cfg.maxAds) return;
-
-        // tìm paragraph gần viewport để insert 1 cái thôi
-        for (let i = lastInsertedIndex + cfg.pGap; i < paragraphs.length; i++) {
-          const rect = paragraphs[i].getBoundingClientRect();
-          if (rect.top < window.innerHeight + cfg.rootMargin) {
-            lastInsertedIndex = i;
-            createAdAfter(paragraphs[i]);
-            break;
+        // nếu empty -> xóa luôn cho sạch
+        googletag.pubads().addEventListener('slotRenderEnded', function (ev) {
+          if (ev.slot === slot && ev.isEmpty) {
+            var w = document.getElementById(wrapId);
+            if (w) w.remove();
           }
-        }
-      },
-      { passive: true }
-    );
+        });
 
-    // =========================
-    // FIRST CHECK (insert 1 ads sớm)
-    // =========================
-    setTimeout(function () {
-      if (inserted === 0 && paragraphs[0]) {
-        lastInsertedIndex = 0;
-        createAdAfter(paragraphs[0]);
+      } catch (e) {
+        var w = document.getElementById(wrapId);
+        if (w) w.remove();
       }
-    }, 1200);
-
-  } catch (err) {
-    console.error("[MultiAds] Fatal error:", err);
+    });
   }
+
+  // chèn 1 cái đầu tiên để test ngay
+  for (var i = 0; i < ps.length; i++) {
+    if ((ps[i].innerText || '').trim().length >= MIN) {
+      insertAfter(ps[i], i);
+      break;
+    }
+  }
+
+  // scroll chèn tiếp
+  window.addEventListener('scroll', function () {
+    if (busy || inserted >= MAX) return;
+    busy = true;
+
+    setTimeout(function () {
+      for (var i = lastIndex + GAP; i < ps.length; i++) {
+        var rect = ps[i].getBoundingClientRect();
+        if (rect.top < window.innerHeight + 900) {
+          insertAfter(ps[i], i);
+          break;
+        }
+      }
+      busy = false;
+    }, 200);
+
+  }, { passive: true });
 }
 
 /**
@@ -914,6 +768,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
