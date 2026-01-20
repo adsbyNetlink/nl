@@ -319,82 +319,58 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(_adUnit) {
-    console.log("%c[MultiAds] Khởi tạo bản FIX dứt điểm Hiển thị & Khoảng trắng...", "color: white; background: #2ecc71; padding: 5px;");
+    console.log("%c[Debug] Đang kiểm tra Ad Unit: " + _adUnit, "color: white; background: black; padding: 5px;");
 
-    var isMobile = window.innerWidth < 768;
-    var pGap = isMobile ? 3 : 5; 
-    var adCount = 0;
-    var lastPInsertedIndex = -2;
+    // 1. Tìm đoạn văn đầu tiên
+    var firstP = document.querySelector('article p, .post-content p, .entry-content p, .content-detail p, .fck_detail p, #content_blog p, .detail-content p');
+    
+    if (!firstP) {
+        console.error("[Debug] Không tìm thấy đoạn văn (P) nào để chèn!");
+        return;
+    }
 
+    // 2. Tạo ID và khung hiển thị cố định (không ẩn, không xóa)
+    var gpt_id = 'div-gpt-ad-debug-12345';
+    var html = `
+        <div id="${gpt_id}-wrapper" style="margin: 30px auto; text-align: center; border: 2px dashed red;">
+            <p style="font-size: 10px; color: red;">DEBUG SLOT - ĐANG CHỜ ADS...</p>
+            <div id="${gpt_id}" style="min-width: 300px; min-height: 250px; background: #eee;"></div>
+        </div>`;
+    
+    firstP.insertAdjacentHTML('afterend', html);
+
+    // 3. Đăng ký với GAM
     window.googletag = window.googletag || { cmd: [] };
+    googletag.cmd.push(function() {
+        // Xóa các định nghĩa cũ nếu có để tránh xung đột ID
+        googletag.destroySlots();
 
-    var contentArea = document.querySelector('article, .post-content, .entry-content, .content-detail, .fck_detail, #content_blog, .detail-content') || document.body;
-    var paragraphs = contentArea.querySelectorAll('p');
+        var mapping = googletag.sizeMapping()
+            .addSize([1024, 0], [[336, 280], [300, 250]])
+            .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
+            .build();
 
-    // Sử dụng scroll event với throttle để đảm bảo hiệu suất MB
-    var isScrolling;
-    window.addEventListener('scroll', function() {
-        window.clearTimeout(isScrolling);
-        isScrolling = setTimeout(function() {
-            for (var i = 0; i < paragraphs.length; i++) {
-                var rect = paragraphs[i].getBoundingClientRect();
-                if (rect.top < (window.innerHeight + 700) && i >= (lastPInsertedIndex + pGap)) {
-                    if (paragraphs[i].innerText.trim().length < 15) continue;
-                    adCount++;
-                    lastPInsertedIndex = i;
-                    insertNewAdSlot(adCount, paragraphs[i], _adUnit);
+        var slot = googletag.defineSlot(_adUnit, [[300, 250], [320, 100], [320, 50]], gpt_id)
+            .defineSizeMapping(mapping)
+            .addService(googletag.pubads());
+
+        googletag.enableServices();
+        
+        // Gọi hiển thị
+        googletag.display(gpt_id);
+        googletag.pubads().refresh([slot]);
+
+        // Theo dõi phản hồi từ Server
+        googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+            if (event.slot === slot) {
+                if (event.isEmpty) {
+                    console.warn("[Debug Result] Server Google phản hồi: TRỐNG (Unfilled)");
+                } else {
+                    console.log("%c[Debug Result] Server Google phản hồi: CÓ QUẢNG CÁO!", "color: white; background: green;");
                 }
             }
-        }, 150);
-    }, { passive: true });
-
-    function insertNewAdSlot(count, targetElement, unit) {
-        var gpt_id = 'div-gpt-ad-multi-' + Math.floor(Math.random() * 1000000);
-        
-        // GIẢI PHÁP: Tạo khung ban đầu hoàn toàn KHÔNG có kích thước (0px)
-        var html = `
-            <div id="${gpt_id}-wrapper" class="nl-multi-ad-container" style="display: block; width: 100%; height: 0; margin: 0; overflow: hidden; text-align: center; clear: both;">
-                <div id="${gpt_id}"></div>
-            </div>`;
-        targetElement.insertAdjacentHTML('afterend', html);
-
-        googletag.cmd.push(function() {
-            var mapping = googletag.sizeMapping()
-                .addSize([1024, 0], [[336, 280], [300, 250]])
-                .addSize([0, 0], [[300, 250], [320, 100], [320, 50]])
-                .build();
-
-            var adSlot = googletag.defineSlot(unit, [[300, 250], [320, 100], [320, 50]], gpt_id)
-                .defineSizeMapping(mapping)
-                .addService(googletag.pubads());
-
-            // LẮNG NGHE SỰ KIỆN RENDER - ĐÂY LÀ CHÌA KHÓA
-            googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-                if (event.slot === adSlot) {
-                    var wrapper = document.getElementById(gpt_id + '-wrapper');
-                    if (event.isEmpty) {
-                        // TRƯỜNG HỢP KHÔNG CÓ ADS: Xóa bỏ hoàn toàn để không còn khoảng trắng
-                        if (wrapper) wrapper.remove();
-                        console.log(`%c[MultiAds] Slot ${count} TRỐNG -> Đã xóa khung để tránh khoảng trắng.`, "color: #e74c3c;");
-                    } else {
-                        // TRƯỜNG HỢP CÓ ADS: Lúc này mới cho hiện khung và giãn margin
-                        if (wrapper) {
-                            wrapper.style.height = 'auto';
-                            wrapper.style.margin = '25px auto';
-                            wrapper.style.overflow = 'visible';
-                        }
-                        console.log(`%c[MultiAds] Slot ${count} HIỂN THỊ THÀNH CÔNG trên ${isMobile?'MB':'PC'}`, "color: #2ecc71; font-weight: bold;");
-                    }
-                }
-            });
-
-            googletag.display(gpt_id);
-            // Ép nạp lại để đảm bảo hiển thị trên MB
-            setTimeout(function() {
-                googletag.pubads().refresh([adSlot]);
-            }, 50);
         });
-    }
+    });
 }
 
 /**
@@ -402,6 +378,7 @@ function NetlinkAdxMultiads(_adUnit) {
  * Tự động mapping size, không cần element, bắt buộc có nút Close
  */
 function NetlinkAdxFirstView(_adUnit) {
+  console.log("%c[Debug] Đang kiểm tra Ad Unit: " + _adUnit, "color: white; background: black; padding: 5px;");
   checkGPTExists();
   var gpt_id = randomID();
   var containerId = 'nl-firstview-popup-' + gpt_id;
@@ -745,6 +722,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
