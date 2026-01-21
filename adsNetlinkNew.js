@@ -319,7 +319,7 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(adUnit) {
-    console.log('%c[MultiAds] ===== INIT =====', 'color:blue;font-weight:bold');
+    console.log('%c[MultiAds] ===== INIT ===== KHOADD', 'color:blue;font-weight:bold');
 
     var isMobile = window.innerWidth < 768;
     console.log('[MultiAds] isMobile =', isMobile);
@@ -804,6 +804,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
