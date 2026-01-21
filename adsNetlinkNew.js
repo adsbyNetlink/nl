@@ -319,114 +319,140 @@ function NetlinkAdxBalloon(_adUnit, _adSize = [[300, 250], [336, 280], [300, 300
  * @param {string} _adUnit - Mã đơn vị quảng cáo từ GAM
  */
 function NetlinkAdxMultiads(adUnit) {
-    console.log('%c[MultiAds] INIT MultiAds', 'color:blue;font-weight:bold');
+    console.log('%c[MultiAds] ===== INIT =====', 'color:blue;font-weight:bold');
 
     var isMobile = window.innerWidth < 768;
-    var GAP = isMobile ? 3 : 5;
-    var insertedIndex = -999;
-    var adCount = 0;
-    var lock = false;
+    console.log('[MultiAds] isMobile =', isMobile);
 
     window.googletag = window.googletag || { cmd: [] };
 
     function getContent() {
-        return document.querySelector(
-            'article, .entry-content, .post-content, .content-detail, .detail-content'
-        );
+        var el = document.querySelector('#content_blog')
+            || document.querySelector('.entry-content, .post-content, article');
+
+        console.log('[MultiAds] content selector =', el);
+        return el;
+    }
+
+    function runInsert() {
+        console.log('%c[MultiAds] runInsert()', 'color:purple');
+
+        var content = getContent();
+        if (!content) {
+            console.error('[MultiAds] ❌ Không tìm thấy content');
+            return;
+        }
+
+        var ps = content.querySelectorAll('p');
+        console.log('[MultiAds] Tổng số <p> tìm thấy:', ps.length);
+
+        if (!ps.length) {
+            console.warn('[MultiAds] ❌ Không có thẻ <p>');
+            return;
+        }
+
+        for (var i = 0; i < ps.length; i++) {
+            var text = ps[i].innerText.trim();
+
+            console.log(
+                `[MultiAds] Check <p> #${i} | length=${text.length}`
+            );
+
+            if (text.length < 40) {
+                console.log('[MultiAds] → skip (text quá ngắn)');
+                continue;
+            }
+
+            console.log(
+                `%c[MultiAds] ✅ Chọn <p> #${i} để chèn ads`,
+                'color:green;font-weight:bold'
+            );
+
+            insertAdAfter(ps[i], i);
+            break; // chỉ chèn 1 ads để test
+        }
     }
 
     function insertAdAfter(p, index) {
-        adCount++;
-
-        var gptId = 'nl-gpt-' + Date.now() + '-' + adCount;
+        var gptId = 'nl-gpt-' + Date.now();
         var wrapId = gptId + '-wrap';
 
         console.log(
-            `%c[MultiAds] Chèn Ad ${adCount} sau <p> thứ ${index}`,
+            `%c[MultiAds] INSERT DIV sau <p> #${index}`,
             'color:orange'
         );
 
         p.insertAdjacentHTML(
             'afterend',
-            `<div id="${wrapId}" style="margin:20px auto;text-align:center;clear:both;border:1px dashed #ddd">
+            `
+            <div id="${wrapId}"
+                 style="margin:20px auto;
+                        text-align:center;
+                        border:2px dashed red;
+                        padding:10px">
+                <div>DEBUG ADS SLOT</div>
                 <div id="${gptId}" style="min-height:50px"></div>
-            </div>`
+            </div>
+        `
         );
 
+        console.log('[MultiAds] Đã insert DOM, chờ GPT...');
+
         googletag.cmd.push(function () {
+            console.log('[MultiAds] GPT cmd running');
+
             var mapping = googletag.sizeMapping()
                 .addSize([1024, 0], [[336, 280], [300, 250]])
                 .addSize([0, 0], [[320, 100], [320, 50], [300, 250]])
                 .build();
 
-            var slot = googletag
-                .defineSlot(
-                    adUnit,
-                    [[336, 280], [300, 250], [320, 100], [320, 50]],
-                    gptId
-                )
-                .defineSizeMapping(mapping)
-                .addService(googletag.pubads());
+            var slot = googletag.defineSlot(
+                adUnit,
+                [[336, 280], [300, 250], [320, 100], [320, 50]],
+                gptId
+            ).defineSizeMapping(mapping)
+             .addService(googletag.pubads());
+
+            console.log('[MultiAds] Slot defined:', slot);
 
             googletag.display(gptId);
+            console.log('[MultiAds] googletag.display() called');
 
-            // Mobile cần delay
             setTimeout(function () {
+                console.log('[MultiAds] refresh slot');
                 try {
                     googletag.pubads().refresh([slot]);
-                } catch (e) {}
-            }, isMobile ? 1200 : 300);
-
-            googletag.pubads().addEventListener('slotRenderEnded', function (e) {
-                if (e.slot !== slot) return;
-
-                if (e.isEmpty) {
-                    console.warn(`[MultiAds] Ad ${adCount} EMPTY`);
-                    var w = document.getElementById(wrapId);
-                    if (w) w.style.display = 'none';
-                } else {
-                    console.log(
-                        `%c[MultiAds] Ad ${adCount} HIỂN THỊ`,
-                        'color:green;font-weight:bold'
-                    );
+                } catch (e) {
+                    console.error('[MultiAds] refresh error', e);
                 }
-            });
+            }, isMobile ? 1500 : 500);
+
+            googletag.pubads().addEventListener(
+                'slotRenderEnded',
+                function (e) {
+                    if (e.slot !== slot) return;
+
+                    if (e.isEmpty) {
+                        console.warn('[MultiAds] ❌ ADS EMPTY');
+                        var w = document.getElementById(wrapId);
+                        if (w) w.style.display = 'none';
+                    } else {
+                        console.log(
+                            '%c[MultiAds] ✅ ADS RENDERED',
+                            'color:green;font-weight:bold'
+                        );
+                    }
+                }
+            );
         });
     }
 
-    window.addEventListener(
-        'scroll',
-        function () {
-            if (lock) return;
-
-            var content = getContent();
-            if (!content) return;
-
-            var ps = content.querySelectorAll('p');
-            if (!ps.length) return;
-
-            var scrollBottom = window.scrollY + window.innerHeight;
-
-            for (var i = 0; i < ps.length; i++) {
-                if (i < insertedIndex + GAP) continue;
-                if (ps[i].innerText.trim().length < 30) continue;
-
-                var rect = ps[i].getBoundingClientRect();
-                var top = rect.top + window.scrollY;
-
-                // ⭐ CHỈ CẦN paragraph CHẠM VIEWPORT
-                if (top < scrollBottom + 100) {
-                    lock = true;
-                    insertedIndex = i;
-                    insertAdAfter(ps[i], i);
-
-                    setTimeout(() => (lock = false), 1500);
-                    break;
-                }
-            }
-        },
-        { passive: true }
-    );
+    // ⭐ CHẠY NGAY SAU KHI LOAD
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runInsert);
+    } else {
+        runInsert();
+    }
 }
 
 /**
@@ -778,6 +804,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
