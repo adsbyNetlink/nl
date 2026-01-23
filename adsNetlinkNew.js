@@ -587,6 +587,8 @@ function NetlinkAdxFirstViewExt(_adUnit, _isDisplay = 0, _pageView = [0], _close
 function NetlinkAdxInPage(_adUnit, _marginTop = -1) {
   checkGPTExists();
   var gpt_id = randomID();
+
+  console.log(`%c[InPage] Khoa Do Dinh ở đây rồi nhé`, "color: #8e44ad; font-weight: bold;");
   
   console.log(`%c[InPage] Khởi tạo AdUnit: ${_adUnit}`, "color: #8e44ad; font-weight: bold;");
   
@@ -804,6 +806,7 @@ function randomID() {
 
   return "netlink-gpt-ad-" + r + "-0";
 }
+
 
 
 
