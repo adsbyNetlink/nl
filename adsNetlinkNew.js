@@ -698,13 +698,10 @@ function NetlinkAdxScrollReveal(_adUnit, _target = null) {
  * @param {string} _target - (Tùy chọn) Selector vùng nội dung
  */
 function NetlinkAsenseScrollReveal(_client, _slot, _target = null) {
-    // 1. Chỉ chạy trên Mobile
     if (window.innerWidth >= 768) return;
 
-    // 2. Kiểm tra và nạp JS gốc của Google Adsense (Dùng hàm anh đã viết)
-    checkAdsenseJSExists(_client);
+    checkAdsenseJSExists(_client); // Gọi ngay từ đầu để script Adsense có thời gian load
 
-    // 3. Tìm vùng nội dung thông minh
     var contentArea = findSmartContentArea(_target);
     if (!contentArea) return;
 
@@ -713,8 +710,8 @@ function NetlinkAsenseScrollReveal(_client, _slot, _target = null) {
 
     var revealId = 'nl-reveal-asense-' + Math.floor(Math.random() * 1000000);
     var targetElement = paragraphs[Math.floor(paragraphs.length / 2)];
+    var adInitialized = false; // Cờ chống khởi tạo nhiều lần
 
-    // 4. Tạo cấu trúc Reveal (Chiều cao 350px để thoải mái cho size 336x280)
     var html = `
         <div id="${revealId}-wrapper" style="width: 100%; height: 350px; margin: 30px 0; position: relative; clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0);">
             <div id="${revealId}" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 350px; z-index: -1; display: none; justify-content: center; align-items: center; background: #ffffff;">
@@ -729,15 +726,30 @@ function NetlinkAsenseScrollReveal(_client, _slot, _target = null) {
     `;
     targetElement.insertAdjacentHTML('afterend', html);
 
-    // 5. Kích hoạt logic cuộn để hiển thị
-    handleScrollReveal(revealId);
+    window.addEventListener('scroll', function () {
+        var wrapper = document.getElementById(revealId + '-wrapper');
+        var adContainer = document.getElementById(revealId);
+        if (!wrapper || !adContainer) return;
 
-    // 6. Push quảng cáo (Cần bọc trong try-catch để tránh lỗi JS nếu thư viện chưa load kịp)
-    try {
-        (adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (e) {
-        console.error("Adsense Reveal Error:", e);
-    }
+        var rect = wrapper.getBoundingClientRect();
+        var inViewport = rect.top < window.innerHeight && rect.bottom > 0;
+
+        if (inViewport) {
+            adContainer.style.display = 'flex';
+
+            // Chỉ push Adsense đúng 1 lần, khi wrapper đã vào viewport
+            if (!adInitialized) {
+                adInitialized = true;
+                try {
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                } catch (e) {
+                    console.error("Adsense Reveal Error:", e);
+                }
+            }
+        } else {
+            adContainer.style.display = 'none';
+        }
+    });
 }
 
 // Hàm tìm vùng nội dung thông minh
