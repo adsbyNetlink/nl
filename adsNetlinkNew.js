@@ -630,7 +630,7 @@ function NetlinkAdxInPage(_adUnit, _marginTop = -1) {
  * @param {string} _target - (Tùy chọn) Selector vùng nội dung nếu muốn chỉ định thủ công
  */
 function NetlinkAdxScrollReveal(_adUnit, _target = null) {
-    if (window.innerWidth >= 768) return; 
+    if (window.innerWidth >= 768) return;
 
     var contentArea = findSmartContentArea(_target);
     if (!contentArea) return;
@@ -638,13 +638,14 @@ function NetlinkAdxScrollReveal(_adUnit, _target = null) {
     var paragraphs = contentArea.querySelectorAll('p');
     if (paragraphs.length < 2) return;
 
-    checkGPTExists(); 
-    var gpt_id = randomID(); 
+    checkGPTExists(); // Gọi ngay từ đầu để GPT có thời gian load
+
+    var gpt_id = randomID();
     var containerId = 'nl-reveal-adx-' + gpt_id;
+    var adInitialized = false; // Cờ chống khởi tạo nhiều lần
 
     var targetElement = paragraphs[Math.floor(paragraphs.length / 2)];
-    
-    // Tăng height lên 350px để chứa vừa khít size 336x280 và padding
+
     var html = `
         <div id="${containerId}-wrapper" style="width: 100%; height: 350px; margin: 30px 0; position: relative; clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0);">
             <div id="${containerId}" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 350px; z-index: -1; display: none; justify-content: center; align-items: center; background: #ffffff;">
@@ -656,21 +657,37 @@ function NetlinkAdxScrollReveal(_adUnit, _target = null) {
     `;
     targetElement.insertAdjacentHTML('afterend', html);
 
-    handleScrollReveal(containerId);
+    window.addEventListener('scroll', function () {
+        var wrapper = document.getElementById(containerId + '-wrapper');
+        var adContainer = document.getElementById(containerId);
+        if (!wrapper || !adContainer) return;
 
-    window.googletag = window.googletag || { cmd: [] };
-    googletag.cmd.push(function() {
-        // Định nghĩa các size chuẩn anh yêu cầu
-        var slot = googletag.defineSlot(_adUnit, [[336, 280], [300, 250]], gpt_id).addService(googletag.pubads());
-        googletag.enableServices();
-        googletag.display(gpt_id);
+        var rect = wrapper.getBoundingClientRect();
+        var inViewport = rect.top < window.innerHeight && rect.bottom > 0;
 
-        googletag.pubads().addEventListener('slotRenderEnded', function(event) {
-            if (event.slot === slot && event.isEmpty) {
-                var wrapper = document.getElementById(containerId + '-wrapper');
-                if (wrapper) wrapper.remove();
+        if (inViewport) {
+            adContainer.style.display = 'flex';
+
+            // Chỉ khởi tạo GPT slot đúng 1 lần, khi wrapper đã vào viewport
+            if (!adInitialized) {
+                adInitialized = true;
+                window.googletag = window.googletag || { cmd: [] };
+                googletag.cmd.push(function () {
+                    var slot = googletag.defineSlot(_adUnit, [[336, 280], [300, 250]], gpt_id).addService(googletag.pubads());
+                    googletag.enableServices();
+                    googletag.display(gpt_id);
+
+                    googletag.pubads().addEventListener('slotRenderEnded', function (event) {
+                        if (event.slot === slot && event.isEmpty) {
+                            var wrapper = document.getElementById(containerId + '-wrapper');
+                            if (wrapper) wrapper.remove();
+                        }
+                    });
+                });
             }
-        });
+        } else {
+            adContainer.style.display = 'none';
+        }
     });
 }
 
