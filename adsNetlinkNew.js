@@ -240,10 +240,9 @@ function renderNetlinkMegaClose(_targetId, _slot, _vPos = 0, _hPos = 1) {
 function NetlinkAdxWipe(_adUnit, _delay = 3000, _closeBtnPos = 1) {
   // Chỉ chạy trên Mobile theo yêu cầu trước đó của anh
   if (window.innerWidth >= 768) return;
-
+  checkGPTExists();
   // Sử dụng tham số _delay để điều chỉnh thời gian hiển thị
-  setTimeout(function() {
-    checkGPTExists();
+  setTimeout(function() {    
     var gpt_id = randomID();
     var containerId = 'nl-wipe-container-' + gpt_id;
     var html = `
