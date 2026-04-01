@@ -145,78 +145,77 @@ function NetlinkAdxSticky(_adUnit, _adPosition=0) {
   });
 }
 
-function NetlinkAdxInImage(_adUnit, _adSize, _mapping = [], _element, _image = 1, _marginBottom=0) {
-  var images = document.body.querySelectorAll(_element);
-  var image = images[_image - 1];
-  if(image == undefined) return;
+function NetlinkAdxInImage(_adUnit, _adSize, _mapping = [], _element, _image = 1, _marginBottom = 0) {
+    var images = document.body.querySelectorAll(_element);
+    var image = images[_image - 1];
+    if (image == undefined) return;
 
-  checkGPTExists();
+    checkGPTExists();
 
-  var gpt_id = randomID();
+    var gpt_id = randomID();
 
-  window.googletag = window.googletag || { cmd: [] };
-  googletag.cmd.push(function () {
-    var adSlot = googletag.defineSlot(_adUnit, _adSize, gpt_id).addService(googletag.pubads());
+    window.googletag = window.googletag || { cmd: [] };
+    googletag.cmd.push(function () {
+        var adSlot = googletag.defineSlot(_adUnit, _adSize, gpt_id).addService(googletag.pubads());
 
-    if(_mapping.length) {
-      var mapping = googletag.sizeMapping();
+        if (_mapping.length) {
+            var mapping = googletag.sizeMapping();
 
-      _mapping.forEach(({ breakpoint, size }) => {
-          var sizeArray = Array.isArray(size) ? size : [size];
-          mapping.addSize(breakpoint, sizeArray);
-      });
-      
-      var finalMapping = mapping.build();
+            _mapping.forEach(({ breakpoint, size }) => {
+                var sizeArray = Array.isArray(size) ? size : [size];
+                mapping.addSize(breakpoint, sizeArray);
+            });
 
-      adSlot.defineSizeMapping(finalMapping);
-    }
+            var finalMapping = mapping.build();
+            adSlot.defineSizeMapping(finalMapping);
+        }
 
-    googletag.pubads().enableSingleRequest();
-    googletag.enableServices();
-  });
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+    });
 
-  var netlink_inImage = document.createElement("div");
-  netlink_inImage.className = "netlink-inimage-ad";
-  netlink_inImage.style.cssText = `position:relative;`;
+    var netlink_inImage = document.createElement("div");
+    netlink_inImage.className = "netlink-inimage-ad";
+    netlink_inImage.style.cssText = `position:relative;`;
 
-  var inImage_Ad = document.createElement("div");
-  inImage_Ad.style.cssText = `position:absolute;bottom:${_marginBottom}px;z-index:10;width:100%;`;
+    var inImage_Ad = document.createElement("div");
+    inImage_Ad.style.cssText = `position:absolute;bottom:${_marginBottom}px;z-index:10;width:100%;`;
 
-  var divAdsCenter = document.createElement("center");
+    var divAdsCenter = document.createElement("center");
 
-  var divAds = document.createElement("div");
-  divAds.id = gpt_id;
+    var divAds = document.createElement("div");
+    divAds.id = gpt_id;
 
-  var inImage_Close = document.createElement("span");
-  inImage_Close.innerHTML = "×";
-  inImage_Close.style.cssText = "position:absolute;display:none;z-index:1;width:25px !important;height:25px !important;right:2px !important;top:-27px !important;cursor:pointer;font-size:20px;text-align:center;background:white;padding:2px;border-radius:20px;line-height:1;";
+    var inImage_Close = document.createElement("span");
+    inImage_Close.innerHTML = "×";
+    inImage_Close.style.cssText = "position:absolute;display:none;z-index:1;width:25px !important;height:25px !important;right:2px !important;top:-27px !important;cursor:pointer;font-size:20px;text-align:center;background:white;padding:2px;border-radius:20px;line-height:1;";
 
-  divAdsCenter.appendChild(divAds);
-  inImage_Ad.appendChild(divAdsCenter);
-  inImage_Ad.appendChild(inImage_Close);
+    divAdsCenter.appendChild(divAds);
+    inImage_Ad.appendChild(divAdsCenter);
+    inImage_Ad.appendChild(inImage_Close);
 
-  netlink_inImage.appendChild(inImage_Ad);
+    netlink_inImage.appendChild(inImage_Ad);
 
-  image.insertAdjacentElement("afterend", netlink_inImage);
+    image.insertAdjacentElement("afterend", netlink_inImage);
 
-  googletag.cmd.push(function () {
-    googletag.display(gpt_id);
-  });
+    googletag.cmd.push(function () {
+        googletag.display(gpt_id);
+    });
 
-  var timeout = 0;
-  var interval = setInterval(function () {
-    var iframeAdx = divAds.querySelector("iframe");
-    if (iframeAdx && iframeAdx.getAttribute("data-load-complete") == "true") {
-      inImage_Close.style.display = "block";
-      clearInterval(interval);
-    }
-    if(++timeout > 600) 
-      clearInterval(interval);
-  }, 1000);
+    var timeout = 0;
+    var interval = setInterval(function () {
+        var iframeAdx = divAds.querySelector("iframe");
+        if (iframeAdx && iframeAdx.getAttribute("data-load-complete") == "true") {
+            inImage_Close.style.display = "block";
+            clearInterval(interval);
+        }
+        if (++timeout > 150) // 150 × 200ms = 30 giây rồi dừng
+            clearInterval(interval);
+    }, 200); // Check mỗi 200ms thay vì 1000ms
 
-  inImage_Close.addEventListener("click", function () {
-    netlink_inImage.style.visibility = "hidden";
-  });
+    inImage_Close.addEventListener("click", function () {
+        netlink_inImage.style.visibility = "hidden";
+    });
 }
 
 function NetlinkAdxInImages(_adUnit, _start, _end, _adSize, _mapping = [], _element, _image = [], _marginBottom=0) {
@@ -386,45 +385,45 @@ function MultipleSizeAdd(_adUnit, _element, _insertPosition=0) {
 }
 
 function MultipleSizeScroll(_marginTop) {
-  document.addEventListener("scroll", function (e) {
-    var elements = document.getElementsByClassName("netlink-multiplesize");
-    for (var i = 0; i < elements.length; i++) {
-      var e = elements[i];
+    document.addEventListener("scroll", function (e) {
+        var elements = document.getElementsByClassName("netlink-multiplesize");
+        for (var i = 0; i < elements.length; i++) {
+            var el = elements[i]; // Đổi từ 'e' → 'el', tránh ghi đè tham số event
 
-      var div = e.querySelector(".ms-ad");
-      var h = e.querySelector(".ms-content-ad").clientHeight;
-      var ch = e.querySelector(".ms-ad").clientHeight;
+            var div = el.querySelector(".ms-ad");
+            var h = el.querySelector(".ms-content-ad").clientHeight;
+            var ch = el.querySelector(".ms-ad").clientHeight;
 
-      var ap = e.querySelector(".ms-content-ad").getBoundingClientRect().top;
-      if (ch < h) {
-        if (ap >= _marginTop) {
-          div.style.position = "";
-          div.style.top = "";
-          div.style.bottom = "";
-          div.style.left = "";
-          div.style.transform = "";
-        } else if (ap < _marginTop && Math.abs(ap) + ch < h - _marginTop) {
-          div.style.position = "fixed";
-          div.style.top = _marginTop + "px";
-          div.style.bottom = "";
-          div.style.left = "50%";
-          div.style.transform = "translateX(-50%)";
-        } else if (Math.abs(ap) + ch >= h - _marginTop) {
-          div.style.position = "absolute";
-          div.style.top = "";
-          div.style.bottom = "0";
-          div.style.left = "50%";
-          div.style.transform = "translateX(-50%)";
+            var ap = el.querySelector(".ms-content-ad").getBoundingClientRect().top;
+            if (ch < h) {
+                if (ap >= _marginTop) {
+                    div.style.position = "";
+                    div.style.top = "";
+                    div.style.bottom = "";
+                    div.style.left = "";
+                    div.style.transform = "";
+                } else if (ap < _marginTop && Math.abs(ap) + ch < h - _marginTop) {
+                    div.style.position = "fixed";
+                    div.style.top = _marginTop + "px";
+                    div.style.bottom = "";
+                    div.style.left = "50%";
+                    div.style.transform = "translateX(-50%)";
+                } else if (Math.abs(ap) + ch >= h - _marginTop) {
+                    div.style.position = "absolute";
+                    div.style.top = "";
+                    div.style.bottom = "0";
+                    div.style.left = "50%";
+                    div.style.transform = "translateX(-50%)";
+                }
+            } else {
+                div.style.position = "";
+                div.style.top = "";
+                div.style.bottom = "";
+                div.style.left = "";
+                div.style.transform = "";
+            }
         }
-      } else {
-        div.style.position = "";
-        div.style.top = "";
-        div.style.bottom = "";
-        div.style.left = "";
-        div.style.transform = "";
-      }
-    }
-  });
+    });
 }
 
 function NetlinkAdxFirstView(_adUnit, _adSize = [300, 600]) {
