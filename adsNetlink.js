@@ -146,9 +146,23 @@ function NetlinkAdxSticky(_adUnit, _adPosition=0) {
 }
 
 function NetlinkAdxInImage(_adUnit, _adSize, _mapping = [], _element, _image = 1, _marginBottom = 0) {
-    var images = document.body.querySelectorAll(_element);
-    var image = images[_image - 1];
-    if (image == undefined) return;
+  var normalizedElement = null;
+	if (_element) {
+		if (_element.indexOf('>') === -1 && _element.indexOf('.') === -1 && _element.indexOf('#') === -1) {
+			normalizedElement = _element.trim().split(/\s+/).map(function(c) {
+				return '.' + c;
+			}).join('');
+		} else {
+			normalizedElement = _element;
+		}
+	}
+
+	var contentArea = normalizedElement ? document.body.querySelector(normalizedElement) : document.body;
+	if (!contentArea) return;
+
+	var images = contentArea.querySelectorAll('img');
+	var image = images[_image - 1];
+	if (image == undefined) return;
 
     checkGPTExists();
 
