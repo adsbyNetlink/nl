@@ -632,19 +632,36 @@ function NetlinkAdxInPage(_adUnit, _marginTop = -1) {
 function NetlinkAdxScrollReveal(_adUnit, _target = null) {
     if (window.innerWidth >= 768) return;
 
-    var contentArea = findSmartContentArea(_target);
+    // Fix: Chuẩn hóa selector nếu truyền vào dạng "class1 class2"
+    var normalizedTarget = null;
+    if (_target) {
+        normalizedTarget = _target.trim().split(/\s+/).map(function(c) {
+            return c.startsWith('.') ? c : '.' + c;
+        }).join('');
+    }
+
+    var contentArea = findSmartContentArea(normalizedTarget);
     if (!contentArea) return;
 
     var paragraphs = contentArea.querySelectorAll('p');
-    if (paragraphs.length < 2) return;
+    var targetElement = null;
 
-    checkGPTExists(); // Gọi ngay từ đầu để GPT có thời gian load
+    if (paragraphs.length >= 2) {
+        // Trường hợp bình thường: có đủ thẻ <p>
+        targetElement = paragraphs[Math.floor(paragraphs.length / 2)];
+    } else {
+        // Fallback cho site không dùng thẻ <p> (như adfill):
+        // Tìm điểm giữa nội dung dựa trên tổng chiều dài text
+        targetElement = findMidpointByTextLength(contentArea);
+    }
+
+    if (!targetElement) return;
+
+    checkGPTExists();
 
     var gpt_id = randomID();
     var containerId = 'nl-reveal-adx-' + gpt_id;
-    var adInitialized = false; // Cờ chống khởi tạo nhiều lần
-
-    var targetElement = paragraphs[Math.floor(paragraphs.length / 2)];
+    var adInitialized = false;
 
     var html = `
         <div id="${containerId}-wrapper" style="width: 100%; height: 350px; margin: 30px 0; position: relative; clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0);">
@@ -667,8 +684,6 @@ function NetlinkAdxScrollReveal(_adUnit, _target = null) {
 
         if (inViewport) {
             adContainer.style.display = 'flex';
-
-            // Chỉ khởi tạo GPT slot đúng 1 lần, khi wrapper đã vào viewport
             if (!adInitialized) {
                 adInitialized = true;
                 window.googletag = window.googletag || { cmd: [] };
@@ -679,8 +694,8 @@ function NetlinkAdxScrollReveal(_adUnit, _target = null) {
 
                     googletag.pubads().addEventListener('slotRenderEnded', function (event) {
                         if (event.slot === slot && event.isEmpty) {
-                            var wrapper = document.getElementById(containerId + '-wrapper');
-                            if (wrapper) wrapper.remove();
+                            var w = document.getElementById(containerId + '-wrapper');
+                            if (w) w.remove();
                         }
                     });
                 });
@@ -689,6 +704,31 @@ function NetlinkAdxScrollReveal(_adUnit, _target = null) {
             adContainer.style.display = 'none';
         }
     });
+}
+
+// Hàm tìm điểm chèn ad dựa trên chiều dài text (dùng cho site không có <p>)
+function findMidpointByTextLength(contentArea) {
+    // Lấy tất cả child nodes trực tiếp là element
+    var children = Array.prototype.slice.call(contentArea.childNodes).filter(function(n) {
+        return n.nodeType === 1; // Element nodes only
+    });
+
+    if (children.length < 2) return contentArea.lastElementChild || contentArea;
+
+    // Tính tổng độ dài text
+    var totalLen = contentArea.innerText ? contentArea.innerText.length : contentArea.textContent.length;
+    var halfLen = totalLen / 2;
+    var accumulated = 0;
+
+    for (var i = 0; i < children.length; i++) {
+        var t = children[i].innerText ? children[i].innerText.length : children[i].textContent.length;
+        accumulated += t;
+        if (accumulated >= halfLen) {
+            return children[i];
+        }
+    }
+
+    return children[Math.floor(children.length / 2)];
 }
 
 /**
