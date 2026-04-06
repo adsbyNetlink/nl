@@ -363,8 +363,16 @@ function NetlinkAdxMultipleSizes(_adUnit, _start, _end, _elements, _insertPositi
 
 //_insertPosition = 0: beforeend, position = 1: afterbegin, position = 2: beforebegin, position = 3: afterend
 function MultipleSizeAdd(_adUnit, _element, _insertPosition=0) {
-  var element = document.body.querySelector(_element);
-  if(element == null) return;
+	var normalizedElement = _element;
+	if (_element && _element.indexOf('>') === -1 && 
+		_element.indexOf('.') === -1 && _element.indexOf('#') === -1) {
+		normalizedElement = _element.trim().split(/\s+/).map(function(c) {
+			return '.' + c;
+		}).join('');
+	}
+	
+	var element = document.body.querySelector(normalizedElement);
+	if (element == null) return;
 
   checkGPTExists();
   
